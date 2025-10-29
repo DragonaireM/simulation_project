@@ -1,5 +1,5 @@
 from simulation import Simulation
-from distribution import Triangular, Lognormal
+from distribution import Lognormal, TruncatedNormal
 from typing import Any
 
 class Optimisation:
@@ -36,7 +36,7 @@ class Optimisation:
                 scheduled_arrival=self.scheduled_arrival,
                 mean_service_time=self.mean_service_time,
                 doctors=self.number_of_doctors,
-                iat_distr=Triangular(lower=-10.0, upper=20.0, mode=0),
+                iat_distr=TruncatedNormal(),
                 service_distr=Lognormal(desired_mean=self.mean_service_time, desired_std=self.mean_service_time * 0.5),
                 cost_params=self.cost_params,
                 seed=self.seed
@@ -53,11 +53,8 @@ class Optimisation:
                 sim.working_hours += value
             else:
                 raise ValueError(f"Unknown variable '{variable}' for optimisation.")
-            
-            # Calculate scale factor for distribution adjustments (triangular IAT)
-            scale_factor = min(sim.scheduled_arrival / 15.0, 2.0)
-            sim.iat_distribution = Triangular(lower=-10.0 * scale_factor, upper=20.0 * scale_factor, mode=0)
 
+            # Run the simulation
             sim.simulate(number_of_runs=self.number_of_runs)
             self.simulations[variable].append(sim)
             self.summary[variable].append(sim.summary())
@@ -216,7 +213,7 @@ class Optimisation:
             else:
                 selected_sims = [sims[int(i)] for i in indices if int(i) < len(sims)]
 
-            for sim_idx, sim in enumerate(selected_sims):
+            for sim in selected_sims:
                 print(f"\n{'-'*80}")
                 print(f"Variable: {var} | Configuration: {sim}")
                 print(f"{'-'*80}")

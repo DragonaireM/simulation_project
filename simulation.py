@@ -1,4 +1,4 @@
-from distribution import Exponential, Lognormal, Triangular, TruncatedNormal
+from distribution import Exponential, Lognormal, TruncatedNormal
 from schedule import Schedule
 import pandas as pd
 from typing import Any
@@ -32,7 +32,7 @@ class Simulation:
         self.schedules: list[Schedule] = []
         self.cost_params = cost_params  # idle, waiting, overtime, labor costs
         self.seed = seed
-        self.control_variate_info = None  # Store control variate information if used
+        self.control_variate_info = {}  # Store control variate information if used
 
     def __getitem__(self, key: str) -> Any:
         """
@@ -180,7 +180,7 @@ class Simulation:
         print(f"\nTotal Cost: ${s['averages']['Total Cost']:.2f}")
 
         # Print control variate information if available
-        if self.control_variate_info is not None:
+        if self.control_variate_info:
             cv_info = self.control_variate_info
             print("\n" + "-"*80)
             print("CONTROL VARIATES VARIANCE REDUCTION")
@@ -382,7 +382,7 @@ class Simulation:
         if base_seed is None:
             base_seed = self.seed if self.seed is not None else 42
 
-        all_results = []
+        all_results: list[pd.DataFrame] = []
 
         for run in tqdm(range(num_runs), desc="Standard MC Simulation"):
             seed = base_seed + run
@@ -395,7 +395,7 @@ class Simulation:
         # Calculate statistics
         run_means = combined_df.groupby('run_id')['Waiting_Time'].mean()
         overall_mean = run_means.mean()
-        overall_var = run_means.var(ddof=1)
+        overall_var: float = float(run_means.var(ddof=1))
 
         print(f"\n{'='*80}")
         print("STANDARD MC SUMMARY")
@@ -427,8 +427,8 @@ class Simulation:
         if base_seed is None:
             base_seed = self.seed if self.seed is not None else 42
 
-        all_results = []
-        variance_reduction_info = []
+        all_results: list[pd.DataFrame] = []
+        variance_reduction_info: list[dict[str, Any]] = []
 
         for run in tqdm(range(num_runs), desc="Control Variates Simulation"):
             # Generate SAME random sequence for fair comparison
@@ -544,7 +544,7 @@ class Simulation:
         standard_means = df_standard.groupby('run_id')['Waiting_Time'].mean()
         cv_means = df_cv.groupby('run_id')['Waiting_Time'].mean()
 
-        comparison = {
+        comparison: dict[str, Any] = {
             'num_runs': num_runs,
             'base_seed': base_seed,
             'standard_mc': {
@@ -569,7 +569,7 @@ class Simulation:
         )
 
         # Store control variate info for summary display
-        self.control_variate_info = {
+        self.control_variate_info: dict[str, float] = {
             'variance_reduction_percent': comparison['variance_reduction_percent'],
             'efficiency_gain': comparison['efficiency_gain'],
             'avg_correlation': float(vr_info['correlation_ws'].mean()),
