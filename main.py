@@ -70,7 +70,7 @@ if __name__ == "__main__":
     
         # Save results to database if enabled
         if SAVE_TO_DB:
-            model.save_summary_to_db(db_path=f"out/seed{SEED}/opt_{VARIABLE}")
+            model.save_summary_to_db(db_path=f"out/seed{SEED}/opt_{VARIABLE}", print_summary=False)
 
         # Initialize visualizations
         viz1 = ClinicVisualization(model.simulations[VARIABLE])
