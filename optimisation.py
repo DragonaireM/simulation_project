@@ -156,7 +156,7 @@ class Optimisation:
             "opt_costs": opt_costs
         }
 
-    def save_summary_to_db(self, db_path: str) -> None:
+    def save_summary_to_db(self, db_path: str, print_summary: bool = True) -> None:
         # Before saving, list all summaries and their respective file sizes
         print("Following sizes are estimated (actual sizes may usually be larger.)")
         for var, simulations in self.simulations.items():
@@ -195,6 +195,74 @@ class Optimisation:
                 selected_sims = [sims[int(i)] for i in indices if int(i) < len(sims)]
             for sim in selected_sims:
                 sim.write_summaries_to_sqlite(db_path)
+
+        # Print summary after saving
+        if print_summary:
+            self.print_summary_to_console(selections)
+
+    def print_summary_to_console(self, selections: dict[str, Any]) -> None:
+        """
+        Print summary of averages and patient_metrics to console for selected simulations.
+        Includes both standard and control variate results.
+        """
+        print("\n" + "="*80)
+        print("SIMULATION SUMMARY - SAVED RESULTS")
+        print("="*80)
+
+        for var, indices in selections.items():
+            sims = self.simulations[var]
+            if indices == "all":
+                selected_sims = sims
+            else:
+                selected_sims = [sims[int(i)] for i in indices if int(i) < len(sims)]
+
+            for sim_idx, sim in enumerate(selected_sims):
+                print(f"\n{'-'*80}")
+                print(f"Variable: {var} | Configuration: {sim}")
+                print(f"{'-'*80}")
+
+                # Get the summary (already computed)
+                if not hasattr(sim, 'summaries'):
+                    sim.summary()
+
+                s = sim.summaries
+
+                # Print Averages Table
+                print("\nAVERAGES TABLE (MINUTES):")
+                print(f"  Average server idle time:     {s['averages']['average_server_idle_time']:>12.4f} minutes")
+                print(f"  Average patient waiting time: {s['averages']['average_patient_waiting_time']:>12.4f} minutes")
+                print(f"  Average server overtime:      {s['averages']['average_server_overtime']:>12.4f} minutes")
+                print(f"  Total Cost:                   ${s['averages']['Total Cost']:>12.2f}")
+
+                # Print Patient Metrics Table
+                print("\nPATIENT METRICS (MINUTES):")
+                print(f"  Avg waiting time:             {s['patient_metrics']['avg_waiting_time']:>12.4f} minutes")
+                print(f"  Max waiting time:             {s['patient_metrics']['max_waiting_time']:>12.4f} minutes")
+                print(f"  Std dev waiting time:         {s['patient_metrics']['std_waiting_time']:>12.4f} minutes")
+                print(f"  95th percentile:              {s['patient_metrics']['waiting_time_95th_percentile']:>12.4f} minutes")
+                print(f"  Patients waiting > 15 min:    {s['patient_metrics']['patients_waiting_over_15min']:>12}")
+                print(f"  Percentage waiting > 15 min:  {s['patient_metrics']['percentage_waiting_over_15min']:>12.2f}%")
+
+                # Run control variate comparison (this will take some time)
+                print(f"\n  Running control variate comparison with 1000 runs...")
+                comparison = sim.compare_variance_reduction(num_runs=1000, base_seed=sim.seed)
+
+                # Print control variate results
+                print("\n  CONTROL VARIATE COMPARISON:")
+                print(f"    Standard MC:")
+                print(f"      Mean waiting time:          {comparison['standard_mc']['mean_waiting_time']:>12.6f} minutes")
+                print(f"      Variance:                   {comparison['standard_mc']['variance']:>12.6f}")
+                print(f"      Standard error:             {comparison['standard_mc']['std_error']:>12.6f}")
+                print(f"\n    With Control Variates:")
+                print(f"      Mean waiting time:          {comparison['control_variates']['mean_waiting_time']:>12.6f} minutes")
+                print(f"      Variance:                   {comparison['control_variates']['variance']:>12.6f}")
+                print(f"      Standard error:             {comparison['control_variates']['std_error']:>12.6f}")
+                print(f"\n    Variance Reduction:           {comparison['variance_reduction_percent']:>12.2f}%")
+                print(f"    Efficiency Gain:              {comparison['efficiency_gain']:>12.2f}x")
+
+        print("\n" + "="*80)
+        print("END OF SUMMARY")
+        print("="*80 + "\n")
 
     def sensitivity_analysis(self, variable: str, range: tuple[float, float], decimal_places: int) -> list[dict[str, Any]]:
         """
