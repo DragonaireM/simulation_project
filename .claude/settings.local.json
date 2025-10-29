@@ -1,9 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(python test_control_variates.py:*)"
-    ],
-    "deny": [],
-    "ask": []
-  }
-}
