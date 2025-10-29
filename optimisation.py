@@ -261,11 +261,25 @@ class Optimisation:
         print("END OF SUMMARY")
         print("="*80 + "\n")
 
-    def sensitivity_analysis(self, variable: str, range: tuple[float, float], decimal_places: int) -> list[dict[str, Any]]:
+    def sensitivity_analysis(self, variable: str, optimal_solution: Simulation) -> list[dict[str, Any]]:
         """
         Perform sensitivity analysis on the specified variable by examining how changes
         in that variable affect key performance metrics across the simulations.
 
+        Parameters:
+        - variable: The variable to perform sensitivity analysis on.
+        - optimal_solution: The simulation instance representing the optimal solution.
+
         Returns a list of dictionaries containing the variable value and corresponding metrics.
         """
-        raise NotImplementedError("Sensitivity analysis method is not yet implemented.")
+        if variable == "scheduled_arrival":
+            # Perform sensitivity analysis for scheduled_arrival
+            raise NotImplementedError("Sensitivity analysis for scheduled_arrival is not implemented.")
+        elif variable == "mean_service_time":
+            # Perform sensitivity analysis for mean_service_time
+            raise NotImplementedError("Sensitivity analysis for mean_service_time is not implemented.")
+        elif variable == "cost_params":
+            # Perform sensitivity analysis for cost_params
+            raise NotImplementedError("Sensitivity analysis for cost_params is not implemented.")
+        else:
+            raise NotImplementedError(f"Sensitivity analysis for variable '{variable}' is not implemented.")
