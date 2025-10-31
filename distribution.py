@@ -30,6 +30,11 @@ class Exponential:
         rng = np.random.default_rng(seed)
         return rng.exponential(scale=1.0 / self.rate, size=size)
     
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Exponential):
+            return NotImplemented
+        return self.rate == other.rate
+    
 class Lognormal:
     """
     Represents a lognormal distribution with given mu and sigma parameters.
@@ -61,6 +66,14 @@ class Lognormal:
     def sample(self, size: int=1, seed: int | None=None) -> np.ndarray:
         rng = np.random.default_rng(seed)
         return rng.lognormal(mean=self.mu, sigma=self.sigma, size=size)
+    
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Lognormal):
+            return NotImplemented
+        return (
+            math.isclose(self.mu, other.mu, rel_tol=1e-9, abs_tol=1e-12)
+            and math.isclose(self.sigma, other.sigma, rel_tol=1e-9, abs_tol=1e-12)
+        )
 
 class Triangular:
     """
@@ -196,3 +209,8 @@ class TruncatedNormal:
         rng = np.random.default_rng(seed)
         samples = rng.normal(loc=self.mu, scale=self.sigma, size=size)
         return np.clip(samples, self.LOWER_BOUND, self.UPPER_BOUND)
+    
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, TruncatedNormal):
+            return NotImplemented
+        return self.mu == other.mu and self.sigma == other.sigma
