@@ -122,13 +122,15 @@ class Simulation:
 
         average_costs = Averages()
 
+        self.cost = float(np.mean(idle_times) * self.cost_params[0] +
+                                np.mean(waiting_times) * self.number_of_patients * self.cost_params[1] +
+                                np.mean(overtime_times) * self.cost_params[2] +
+                                self.doctors * self.working_hours * 60.0 * self.cost_params[3])
+
         average_costs.add_stats(Statistic("Avg Server Idle Time", np.mean(idle_times)))
         average_costs.add_stats(Statistic("Avg Patient Waiting Time", np.mean(waiting_times)))
         average_costs.add_stats(Statistic("Avg Server Overtime", np.mean(overtime_times)))
-        average_costs.add_stats(Statistic("Total Cost", np.mean(idle_times) * self.cost_params[0] +
-                                                np.mean(waiting_times) * self.number_of_patients * self.cost_params[1] +
-                                                np.mean(overtime_times) * self.cost_params[2] +
-                                                self.doctors * self.working_hours * 60.0 * self.cost_params[3]))
+        average_costs.add_stats(Statistic("Total Cost", self.cost))
 
         summary.add_section(average_costs)
 
