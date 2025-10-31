@@ -26,29 +26,18 @@ class Simulation:
         self.mean_service_time = mean_service_time
         self.doctors = doctors
         self.queue_capacity = queue_capacity
-        self.number_of_patients = int(working_hours * 60 // mean_service_time)
         self.iat_distribution = iat_distr
         self.service_distribution = service_distr
         self.schedules: list[Schedule] = []
         self.cost_params = cost_params  # idle, waiting, overtime, labor costs
         self.seed = seed
         self.control_variate_info = {}  # Store control variate information if used
+        self.setup()
 
-    def __getitem__(self, key: str) -> Any:
-        """
-        Allow dict-like access to attributes.
-        """
-        if hasattr(self, key):
-            return getattr(self, key)
-        raise KeyError(f"Key '{key}' not found in Simulation attributes.")
-    
-    def __str__(self) -> str:
-        # Use notation of queueing systems (e.g., M/M/1)
-        return (f"{int(self.scheduled_arrival)}/{int(self.mean_service_time)}/{int(self.doctors)}")
-    
-    def __repr__(self) -> str:
-        # Same as __str__
-        return self.__str__()
+    def setup(self) -> None:
+        """Sets up attributes that depend on other parameters."""
+        self.number_of_patients = int(self.working_hours * 60 // self.mean_service_time)
+        self.service_distribution = Lognormal(desired_mean=self.mean_service_time, desired_std=self.mean_service_time * 0.5)
 
     def unit_test(self, seed: int | None) -> Schedule:
         service_times = self.service_distribution.sample(size=self.number_of_patients, seed=seed)
@@ -601,7 +590,29 @@ class Simulation:
         print(f"{'='*80}\n")
 
         return comparison
+
+    def __getitem__(self, key: str) -> Any:
+        """
+        Allow dict-like access to attributes.
+        """
+        if hasattr(self, key):
+            return getattr(self, key)
+        raise KeyError(f"Key '{key}' not found in Simulation attributes.")
     
+    def __setitem__(self, key: str, value: Any) -> None:
+        """
+        Allow dict-like setting of attributes.
+        """
+        setattr(self, key, value)
+    
+    def __str__(self) -> str:
+        # Use notation of queueing systems (e.g., M/M/1)
+        return (f"{int(self.scheduled_arrival)}/{int(self.mean_service_time)}/{int(self.doctors)}")
+    
+    def __repr__(self) -> str:
+        # Same as __str__
+        return self.__str__()
+
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Simulation):
             return NotImplemented
