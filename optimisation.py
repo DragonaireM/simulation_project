@@ -1,6 +1,9 @@
 from simulation import Simulation
 from distribution import Lognormal, TruncatedNormal
 from typing import Any
+from summary import Summary
+from tqdm import tqdm
+import pandas as pd
 
 class Optimisation:
     def __init__(self, range: tuple[int, int]=(-5, 5), working_hours: float=10.0, mean_service_time: float=25.0, number_of_doctors: int=1, number_of_runs: int=10000, scheduled_arrival: float=17.0, cost_params: tuple[float, float, float, float]=(4.0, 0.8, 6.0, 4.0), seed: int | None = None) -> None:
@@ -18,7 +21,7 @@ class Optimisation:
             "working_hours": [],
             "2d": []
         }
-        self.summary: dict[str, list[dict[str, Any]]] = {
+        self.summary: dict[str, list[Summary]] = {
             "scheduled_arrival": [],
             "mean_service_time": [],
             "working_hours": [],
@@ -81,6 +84,28 @@ class Optimisation:
                 optimal_value = getattr(sim, variable)
 
         return optimal_value, optimal_cost
+    
+    def optimal_solution(self, variable: str) -> Simulation:
+        """
+        Retrieve the simulation instance corresponding to the optimal value
+        of the specified variable.
+        """
+        simulations = self.simulations[variable]
+        if not simulations:
+            raise RuntimeError(f"No simulations found for variable '{variable}'. Run optimise_for() first.")
+
+        min_cost = float('inf')
+        optimal_simulation = None
+        for sim in simulations:
+            total_cost = sim.total_cost()
+            if total_cost < min_cost:
+                min_cost = total_cost
+                optimal_simulation = sim
+
+        if optimal_simulation is None:
+            raise RuntimeError(f"Could not determine optimal simulation for variable '{variable}'.")
+
+        return optimal_simulation
 
     def optimise_2d(self, fixed_var: str, var_to_opt: str, fixed_var_range: tuple[int, int]) -> None:
         """
@@ -190,7 +215,7 @@ class Optimisation:
                 selected_sims = sims
             else:
                 selected_sims = [sims[int(i)] for i in indices if int(i) < len(sims)]
-            for sim in selected_sims:
+            for sim in tqdm(selected_sims, desc=f"Saving simulations for variable '{var}'"):
                 sim.write_summaries_to_sqlite(db_path)
 
         # Print summary after saving
@@ -229,7 +254,7 @@ class Optimisation:
                 print(f"  Average server idle time:     {s['averages']['average_server_idle_time']:>12.4f} minutes")
                 print(f"  Average patient waiting time: {s['averages']['average_patient_waiting_time']:>12.4f} minutes")
                 print(f"  Average server overtime:      {s['averages']['average_server_overtime']:>12.4f} minutes")
-                print(f"  Total Cost:                   ${s['averages']['Total Cost']:>12.2f}")
+                print(f"  Total Cost:                   ${s['averages']['total_cost']:>12.2f}")
 
                 # Print Patient Metrics Table
                 print("\nPATIENT METRICS (MINUTES):")
@@ -274,7 +299,42 @@ class Optimisation:
         """
         if variable == "scheduled_arrival":
             # Perform sensitivity analysis for scheduled_arrival
-            raise NotImplementedError("Sensitivity analysis for scheduled_arrival is not implemented.")
+            # Change the scheduled arrival time around the optimal solution
+            analysis_results: list[dict[str, Any]] = []
+            for delta in tqdm(range(-3, 4), desc="Sensitivity Analysis Progress"):  # from -3 to +3 minutes
+                adjusted_value = optimal_solution.scheduled_arrival + delta
+                sim = Simulation(
+                    working_hours=optimal_solution.working_hours,
+                    scheduled_arrival=adjusted_value,
+                    mean_service_time=optimal_solution.mean_service_time,
+                    doctors=optimal_solution.doctors,
+                    iat_distr=optimal_solution.iat_distribution,
+                    service_distr=optimal_solution.service_distribution,
+                    cost_params=optimal_solution.cost_params,
+                    seed=self.seed
+                )
+                if sim in self.simulations["scheduled_arrival"]:
+                    # Reuse existing simulation if already run
+                    existing_index = self.simulations["scheduled_arrival"].index(sim)
+                    existing_sim = self.simulations["scheduled_arrival"][existing_index]
+                    summary = self.summary["scheduled_arrival"][existing_index]
+                    analysis_results.append({
+                        "id": delta + 4, # starts from 1
+                        "scheduled_arrival": adjusted_value,
+                        "simulation": existing_sim,
+                        "summary": summary
+                    })
+                    continue
+                sim.simulate(number_of_runs=self.number_of_runs)
+                summary = sim.summary()
+                analysis_results.append({
+                    "id": delta + 4, # starts from 1
+                    "scheduled_arrival": adjusted_value,
+                    "simulation": sim,
+                    "summary": summary
+                })
+            return analysis_results
+
         elif variable == "mean_service_time":
             # Perform sensitivity analysis for mean_service_time
             raise NotImplementedError("Sensitivity analysis for mean_service_time is not implemented.")
@@ -283,3 +343,73 @@ class Optimisation:
             raise NotImplementedError("Sensitivity analysis for cost_params is not implemented.")
         else:
             raise NotImplementedError(f"Sensitivity analysis for variable '{variable}' is not implemented.")
+
+    def sensitivity_summary(self, analysis_results: list[dict[str, Any]], variable: str) -> None:
+        """
+        Print a summary of the sensitivity analysis results to the console.
+
+        Parameters:
+        - analysis_results: List of dictionaries containing analysis results.
+        - variable: The variable that was analyzed.
+        """
+        width = 80 # total width for printing
+        print("\n" + "="*width)
+        header = f"SENSITIVITY ANALYSIS SUMMARY FOR {variable.upper()}"
+        print(" " * ((width - len(header))//2) + header)
+        print("="*width)
+
+        if variable == "scheduled_arrival":
+            # Split into three sections: below optimal, at optimal, above optimal
+            for i in range(3):
+                if i == 0:
+                    # Section 1: Below optimal
+                    print("\n--- Below Optimal Scheduled Arrival ---")
+                elif i == 1:
+                    # Section 2: At optimal
+                    print("\n--- At Optimal Scheduled Arrival ---")
+                else:
+                    # Section 3: Above optimal
+                    print("\n--- Above Optimal Scheduled Arrival ---")
+                minus, zero, plus = analysis_results[2*i:2*i+3]
+                minus_delta_df: pd.DataFrame = zero['summary'].compare(minus['summary'])
+                plus_delta_df: pd.DataFrame = zero['summary'].compare(plus['summary'])
+                minus_delta_df.rename(columns={
+                    "this_summary": "self",
+                    "other_summary": "minus",
+                    "difference": "delta_minus"
+                }, inplace=True)
+                plus_delta_df.rename(columns={
+                    "this_summary": "self",
+                    "other_summary": "plus",
+                    "difference": "delta_plus"
+                }, inplace=True)
+                
+                # Merge the two delta dataframes
+                combined_df = pd.merge(minus_delta_df, plus_delta_df, on=['section' ,'metric', 'self'])
+                # Reorder columns for clarity
+                combined_df = combined_df[['section', 'metric', 'delta_minus', 'minus', 'self', 'plus', 'delta_plus']]
+
+                # Add a zero-th row for the variable change
+                variable_change_row: dict[str, Any] = {
+                    'section': 'variable_change',
+                    'metric': variable,
+                    'delta_minus': '-1',
+                    'minus': minus['scheduled_arrival'],
+                    'self': zero['scheduled_arrival'],
+                    'plus': plus['scheduled_arrival'],
+                    'delta_plus': '+1'
+                }
+                combined_df = pd.concat([pd.DataFrame([variable_change_row]), combined_df], ignore_index=True)
+                print(combined_df.iloc[:, 1:])
+
+        elif variable == "mean_service_time":
+            # Sensitivity summary for mean_service_time
+            raise NotImplementedError("Sensitivity summary for mean_service_time is not implemented.")
+        elif variable == "cost_params":
+            # Sensitivity summary for cost_params
+            raise NotImplementedError("Sensitivity summary for cost_params is not implemented.")
+
+        print("\n" + "="*width)
+        footer = "END OF SENSITIVITY ANALYSIS SUMMARY"
+        print(" " * ((width - len(footer))//2) + footer)
+        print("="*width + "\n")
