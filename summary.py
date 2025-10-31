@@ -131,6 +131,39 @@ class Summary:
     def add_section(self, section: Section):
         self.__setattr__(section.title.replace(" ", "_").lower(), section)
 
+    def compare(self, other: "Summary") -> pd.DataFrame:
+        """
+        Compares this summary with another summary.
+        Returns a DataFrame showing the differences in metrics.
+        """
+        comparison_data: dict[str, list[Any]] = {
+            "section": [],
+            "metric": [],
+            "this_summary": [],
+            "other_summary": [],
+            "difference": [],
+        }
+
+        for sec_name in self.__dict__.keys():
+            if sec_name == "schedules" or sec_name == "waiting_times":
+                continue  # Skip complex sections
+            if isinstance(self.__dict__[sec_name], Section):
+                this_section = self.__dict__[sec_name]
+                other_section = other.__dict__.get(sec_name, None)
+                if other_section:
+                    for attr in this_section.__dict__.keys():
+                        if attr != "title":
+                            this_value = this_section[attr]
+                            other_value = other_section[attr]
+                            difference = other_value - this_value
+                            comparison_data["section"].append(sec_name)
+                            comparison_data["metric"].append(attr)
+                            comparison_data["this_summary"].append(this_value)
+                            comparison_data["other_summary"].append(other_value)
+                            comparison_data["difference"].append(difference)
+
+        return pd.DataFrame(comparison_data)
+
     def __str__(self):
         summary_str = "Summary Report\n\n"
         for sec in self.__dict__.values():
