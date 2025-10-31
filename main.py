@@ -26,7 +26,7 @@ if __name__ == "__main__":
     # "scheduled_arrival"
     # "mean_service_time"
     # "working_hours"
-    VARIABLE = "scheduled_arrival"
+    VARIABLE = "mean_service_time"
     SENSITIVITY_ANALYSIS = True  # Set to True to perform sensitivity analysis around optimal value
 
     # SAVE TO DATABASE --- OPTIONAL ---
