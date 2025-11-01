@@ -62,25 +62,29 @@ class Optimisation:
             # Display progress
             print(f"Optimisation for {variable}: set to {getattr(sim, variable)} completed.")
 
-    def optimal_value(self, variable: str) -> tuple[Any, float]:
+    def optimal_value(self, variable: str) -> tuple[Any, float, "Simulation"]:
         """
         Determine the optimal value of the specified variable that minimizes total cost.
+        Returns (optimal_value, optimal_cost, optimal_simulation)
         """
-        simulations = self.simulations[variable]
+        simulations = self.simulations.get(variable, [])
         if not simulations:
             raise RuntimeError(f"No simulations found for variable '{variable}'. Run optimise_for() first.")
 
         min_cost = float('inf')
         optimal_value = None
         optimal_cost = 0.0
+        optimal_simulation = None
+
         for sim in simulations:
             total_cost = sim.total_cost()
             if total_cost < min_cost:
                 min_cost = total_cost
                 optimal_cost = total_cost
                 optimal_value = getattr(sim, variable)
+                optimal_simulation = sim
 
-        return optimal_value, optimal_cost
+        return optimal_value, optimal_cost, optimal_simulation
 
     def optimise_2d(self, fixed_var: str, var_to_opt: str, fixed_var_range: tuple[int, int]) -> None:
         """
@@ -166,7 +170,20 @@ class Optimisation:
                 print(f"({i}) {sim}: {sim.human_readable_size(approx_size)}")
 
         # Let user choose which simulations to save
-        to_save = input("Which simulations do you want to save? \n(e.g., 'scheduled_arrival:0,2;mean_service_time:1;working_hours:all' \nOR 'all' to save everything \nOR 'none' to save nothing): ")
+        try:
+            to_save = input(
+                "Which simulations do you want to save? \n"
+                "(e.g., 'scheduled_arrival:0,2;mean_service_time:1;working_hours:all'\n"
+                "OR 'all' to save everything \nOR 'none' to save nothing): "
+            )
+        except EOFError:
+            # Auto mode for non-interactive calls (like sensitivity analysis)
+            to_save = "all"
+
+        # If input is empty (e.g., automated run), default to 'all'
+        if not to_save.strip():
+            to_save = "all"
+
         selections: dict[str, Any] = {}
         if to_save.strip().lower() == "all":
             for var in self.simulations.keys():
@@ -261,25 +278,242 @@ class Optimisation:
         print("END OF SUMMARY")
         print("="*80 + "\n")
 
-    def sensitivity_analysis(self, variable: str, optimal_solution: Simulation) -> list[dict[str, Any]]:
+    def sensitivity_analysis(
+        self,
+        variable: str,
+        opt_sim: "Simulation",
+        span: float | None = None,
+        step: float | None = None,
+        multipliers: list[float] | None = None
+    ) -> list[dict[str, Any]]:
         """
-        Perform sensitivity analysis on the specified variable by examining how changes
-        in that variable affect key performance metrics across the simulations.
+        Perform sensitivity analysis on the specified variable by varying it around
+        the optimal simulation instance (opt_sim). One-at-a-time (OAT) variations are applied.
 
-        Parameters:
-        - variable: The variable to perform sensitivity analysis on.
-        - optimal_solution: The simulation instance representing the optimal solution.
+        Parameters
+        ----------
+        variable : str
+            One of {'scheduled_arrival', 'mean_service_time', 'cost_params'}
+        opt_sim : Simulation
+            Baseline optimal simulation instance.
+        span : float, optional
+            Total range (+/- around baseline) for continuous variables.
+            Defaults: 4 for scheduled_arrival (minutes), 10 for mean_service_time.
+        step : float, optional
+            Step size for continuous variables. Defaults: 1 for arrival, 2.5 for service.
+        multipliers : list[float], optional
+            List of cost multipliers for cost_params. Defaults: [0.5, 0.75, 1.0, 1.25, 1.5, 2.0].
 
-        Returns a list of dictionaries containing the variable value and corresponding metrics.
+        Returns
+        -------
+        list[dict[str, Any]]
+            Results containing variable values and key metrics.
         """
+        import os, numpy as np
+        from distribution import Lognormal, TruncatedNormal
+        from visualisation import ClinicVisualization
+
+        results = []
+
+        # --- Extract baseline parameters ---
+        base_arrival = opt_sim.scheduled_arrival
+        base_service = opt_sim.mean_service_time
+        base_costs = opt_sim.cost_params
+        base_doctors = opt_sim.doctors
+        base_hours = opt_sim.working_hours
+        base_runs = self.number_of_runs
+        base_seed = self.seed
+
+        out_root = os.path.join("out", "sensitivity", variable)
+        os.makedirs(out_root, exist_ok=True)
+
+        # -------------------------------------------------------------------------
+        # Scheduled interarrival time
+        # -------------------------------------------------------------------------
         if variable == "scheduled_arrival":
-            # Perform sensitivity analysis for scheduled_arrival
-            raise NotImplementedError("Sensitivity analysis for scheduled_arrival is not implemented.")
+            self.simulations = {variable: []}
+            self.summary = {variable: []}
+            span = span or 4.0
+            step = step or 1.0
+            grid = np.arange(base_arrival - span / 2, base_arrival + span / 2 + step, step)
+
+            sims = []
+            for sa in grid:
+                sim = Simulation(
+                    working_hours=base_hours,
+                    scheduled_arrival=float(sa),
+                    mean_service_time=base_service,
+                    doctors=base_doctors,
+                    iat_distr=TruncatedNormal(),
+                    service_distr=Lognormal(desired_mean=base_service, desired_std=base_service * 0.5),
+                    cost_params=base_costs,
+                    seed=base_seed,
+                )
+                sim.simulate(number_of_runs=base_runs)
+                sims.append(sim)
+                s = sim.summary()
+                results.append({
+                    "variable": "scheduled_arrival",
+                    "value": float(sa),
+                    "total_cost": s["averages"]["Total Cost"],
+                    "avg_wait": s["patient_metrics"]["avg_waiting_time"],
+                    "wait_95th": s["patient_metrics"]["waiting_time_95th_percentile"],
+                    "pct_waiting_over_15": s["patient_metrics"]["percentage_waiting_over_15min"],
+                    "doctor_utilization": s["system_metrics"]["doctor_utilization"],
+                    "avg_idle_time": s["averages"]["average_server_idle_time"],
+                    "avg_overtime": s["averages"]["average_server_overtime"],
+                })
+
+            db_path = os.path.join(out_root, "scheduled_arrival_sensitivity.db")
+            self.simulations["scheduled_arrival"] = sims
+            self.save_summary_to_db(db_path=db_path, print_summary=False)
+            viz = ClinicVisualization(sims)
+            fig = viz.plot_cost_against_variable(variable="scheduled_arrival")
+            fig.get_figure().savefig(os.path.join(out_root, "cost_vs_arrival.png"), dpi=300, bbox_inches="tight")
+            viz.plot_cost_comparison().get_figure().savefig(os.path.join(out_root, "cost_components_arrival.png"), dpi=300, bbox_inches="tight")
+            wv, _ = viz.plot_tradeoff_analysis()
+            wv.get_figure().savefig(os.path.join(out_root, "tradeoff_wait_vs_utilization.png"), dpi=300, bbox_inches="tight")
+
+        # -------------------------------------------------------------------------
+        # Mean service time
+        # -------------------------------------------------------------------------
         elif variable == "mean_service_time":
-            # Perform sensitivity analysis for mean_service_time
-            raise NotImplementedError("Sensitivity analysis for mean_service_time is not implemented.")
+            self.simulations = {variable: []}
+            self.summary = {variable: []}
+            span = span or 10.0
+            step = step or 2.5
+            grid = np.arange(base_service - span / 2, base_service + span / 2 + step, step)
+
+            sims = []
+            for ms in grid:
+                sim = Simulation(
+                    working_hours=base_hours,
+                    scheduled_arrival=base_arrival,
+                    mean_service_time=float(ms),
+                    doctors=base_doctors,
+                    iat_distr=TruncatedNormal(),
+                    service_distr=Lognormal(desired_mean=float(ms), desired_std=float(ms) * 0.5),
+                    cost_params=base_costs,
+                    seed=base_seed,
+                )
+                sim.simulate(number_of_runs=base_runs)
+                sims.append(sim)
+                s = sim.summary()
+                results.append({
+                    "variable": "mean_service_time",
+                    "value": float(ms),
+                    "total_cost": s["averages"]["Total Cost"],
+                    "avg_wait": s["patient_metrics"]["avg_waiting_time"],
+                    "wait_95th": s["patient_metrics"]["waiting_time_95th_percentile"],
+                    "pct_waiting_over_15": s["patient_metrics"]["percentage_waiting_over_15min"],
+                    "doctor_utilization": s["system_metrics"]["doctor_utilization"],
+                    "avg_idle_time": s["averages"]["average_server_idle_time"],
+                    "avg_overtime": s["averages"]["average_server_overtime"],
+                })
+
+            db_path = os.path.join(out_root, "mean_service_time_sensitivity.db")
+            self.simulations["mean_service_time"] = sims
+            self.save_summary_to_db(db_path=db_path, print_summary=False)
+            viz = ClinicVisualization(sims)
+            fig = viz.plot_cost_against_variable(variable="mean_service_time")
+            fig.get_figure().savefig(os.path.join(out_root, "cost_vs_service.png"), dpi=300, bbox_inches="tight")
+            viz.plot_cost_comparison().get_figure().savefig(os.path.join(out_root, "cost_components_service.png"), dpi=300, bbox_inches="tight")
+            wv, _ = viz.plot_tradeoff_analysis()
+            wv.get_figure().savefig(os.path.join(out_root, "tradeoff_wait_vs_utilization.png"), dpi=300, bbox_inches="tight")
+
+                # -------------------------------------------------------------------------
+        # Cost parameter sensitivity
+        # -------------------------------------------------------------------------
         elif variable == "cost_params":
-            # Perform sensitivity analysis for cost_params
-            raise NotImplementedError("Sensitivity analysis for cost_params is not implemented.")
+            self.simulations = {variable: []}
+            self.summary = {variable: []}
+            multipliers = multipliers or [0.5, 0.75, 1.0, 1.25, 1.5, 2.0]
+            labels = ["idle", "waiting", "overtime", "labor"]
+
+            all_sims = []
+            for i, label in enumerate(labels):
+                for m in multipliers:
+                    costs = list(base_costs)
+                    costs[i] = base_costs[i] * m
+                    sim = Simulation(
+                        working_hours=base_hours,
+                        scheduled_arrival=base_arrival,
+                        mean_service_time=base_service,
+                        doctors=base_doctors,
+                        iat_distr=TruncatedNormal(),
+                        service_distr=Lognormal(desired_mean=base_service, desired_std=base_service * 0.5),
+                        cost_params=tuple(costs),
+                        seed=base_seed,
+                    )
+                    sim.simulate(number_of_runs=base_runs)
+                    all_sims.append(sim)
+                    s = sim.summary()
+                    results.append({
+                        "variable": label,
+                        "multiplier": m,
+                        "cost_params": tuple(costs),
+                        "total_cost": s["averages"]["Total Cost"],
+                        "avg_wait": s["patient_metrics"]["avg_waiting_time"],
+                        "wait_95th": s["patient_metrics"]["waiting_time_95th_percentile"],
+                        "pct_waiting_over_15": s["patient_metrics"]["percentage_waiting_over_15min"],
+                        "doctor_utilization": s["system_metrics"]["doctor_utilization"],
+                        "avg_idle_time": s["averages"]["average_server_idle_time"],
+                        "avg_overtime": s["averages"]["average_server_overtime"],
+                    })
+
+                    # ✅ Save immediately for this parameter–multiplier pair
+                    db_name = f"cost_{label}_x{m:.2f}.db".replace(".", "_")
+                    db_path = os.path.join(out_root, db_name)
+
+                    # Save only this simulation to its own file
+                    self.simulations = {f"{label}_x{m}": [sim]}
+                    self.save_summary_to_db(db_path=db_path, print_summary=False)
+                    print(f"✅ Saved {label} (x{m}) results to {db_name}")
+
+            # Create combined visualisation for all runs
+            viz = ClinicVisualization(all_sims)
+            viz.plot_cost_comparison().get_figure().savefig(
+                os.path.join(out_root, "cost_params_OAT_comparison.png"),
+                dpi=300,
+                bbox_inches="tight"
+            )
+
         else:
-            raise NotImplementedError(f"Sensitivity analysis for variable '{variable}' is not implemented.")
+            raise NotImplementedError(f"Sensitivity analysis for variable '{variable}' not implemented.")
+
+        print(f"✅ Sensitivity analysis for {variable} completed — results saved to {out_root}")
+        
+        import pandas as pd
+
+        # -------------------------------
+        # Δ Comparison Table
+        # -------------------------------
+        df = pd.DataFrame(results)
+
+        # Determine the baseline (opt_sim)
+        base_summary = opt_sim.summary()
+        baseline = {
+            "total_cost": base_summary["averages"]["Total Cost"],
+            "avg_wait": base_summary["patient_metrics"]["avg_waiting_time"],
+            "doctor_utilization": base_summary["system_metrics"]["doctor_utilization"],
+            "avg_idle_time": base_summary["averages"]["average_server_idle_time"],
+            "avg_overtime": base_summary["averages"]["average_server_overtime"],
+        }
+
+        # Compute deltas relative to baseline
+        for metric, base_val in baseline.items():
+            delta_col = f"Δ_{metric}"
+            df[delta_col] = df[metric] - base_val
+
+        # Pretty print and save
+        print("\n" + "=" * 80)
+        print(f"📊 DELTA COMPARISON TABLE for {variable}")
+        print("=" * 80)
+        print(df.round(3).to_string(index=False))
+
+        # Export to CSV
+        delta_csv = os.path.join(out_root, f"{variable}_delta_table.csv")
+        df.to_csv(delta_csv, index=False)
+        print(f"\n✅ Δ-table saved to {delta_csv}")
+
+        return results

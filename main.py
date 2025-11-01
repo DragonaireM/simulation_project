@@ -47,7 +47,7 @@ if __name__ == "__main__":
 
     ### END OF CONSTANTS ###
 
-    # Initialize optimisation model
+    # 1. Initialize optimisation model
     model = Optimisation(
         range=RANGE,
         working_hours=WORKING_HOURS,
@@ -59,7 +59,7 @@ if __name__ == "__main__":
         seed=SEED
     )
 
-    # Run full optimisation to get all metrics
+    # 2. Run full optimisation to get all metrics
     # Choose between normal 1D optimisation (recommended)
     # or 
     # 2D optimisation (proceed with caution)
@@ -134,3 +134,22 @@ if __name__ == "__main__":
 
         if SAVE_TO_PNG:
             viz2.save_plots(f"out/seed{SEED}/opt_2d_{FIXED_VAR}_vs_{VARIABLE}/img")
+
+    # ---------------------------------------------------------------------
+    # 3. Run Sensitivity Analyses using the Optimal Simulation Instance
+    # ---------------------------------------------------------------------
+    print("\n" + "="*80)
+    print("📊 Starting Sensitivity Analysis (scheduled_arrival, mean_service_time, cost_params)...")
+    print("="*80)
+
+    # Retrieve the optimal simulation instance dynamically
+    opt_val, opt_cost, opt_sim = model.optimal_value("scheduled_arrival")
+    print(f"✅ Optimal scheduled_arrival found: {opt_val:.1f} min, Total Cost = {opt_cost:.2f}")
+
+    # Run sensitivity analysis for each key variable
+    sa_arrival = model.sensitivity_analysis("scheduled_arrival", opt_sim)
+    sa_service = model.sensitivity_analysis("mean_service_time", opt_sim)
+    sa_costs = model.sensitivity_analysis("cost_params", opt_sim)
+
+    print("\n✅ All sensitivity analyses completed successfully!")
+    print("→ Databases and plots saved under: out/sensitivity/")
