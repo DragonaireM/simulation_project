@@ -40,7 +40,7 @@ class Optimisation:
                 mean_service_time=self.mean_service_time,
                 doctors=self.number_of_doctors,
                 iat_distr=TruncatedNormal(),
-                service_distr=Lognormal(desired_mean=self.mean_service_time, desired_std=self.mean_service_time * 0.5),
+                service_distr=Lognormal(desired_mean=self.mean_service_time),
                 cost_params=self.cost_params,
                 seed=self.seed
             )

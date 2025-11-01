@@ -5,8 +5,8 @@ import matplotlib.pyplot as plt
 if __name__ == "__main__":
     # CONSTANT VARIABLES (Only modify if exploring different scenarios)
     WORKING_HOURS = 8.0  # hours
-    SCHEDULED_ARRIVAL = 25.0 # minutes - how long the appointment slots are spaced apart
-    MEAN_SERVICE_TIME = 25.0 # minutes
+    SCHEDULED_ARRIVAL = 15 # minutes - how long the appointment slots are spaced apart
+    MEAN_SERVICE_TIME = 15.5 # minutes
     NUMBER_OF_DOCTORS = 1
 
     # Change to 1000 if doing 2D optimisation to reduce computation time
@@ -26,7 +26,7 @@ if __name__ == "__main__":
     # "scheduled_arrival"
     # "mean_service_time"
     # "working_hours"
-    VARIABLE = "mean_service_time"
+    VARIABLE = "scheduled_arrival"
     SENSITIVITY_ANALYSIS = True  # Set to True to perform sensitivity analysis around optimal value
 
     # SAVE TO DATABASE --- OPTIONAL ---

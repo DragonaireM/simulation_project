@@ -39,12 +39,13 @@ class Lognormal:
     """
     Represents a lognormal distribution with given mu and sigma parameters.
     """
-    def __init__(self, desired_mean: float, desired_std: float):
-        if desired_mean <= 0 or desired_std <= 0:
-            raise ValueError("Mean and standard deviation must be positive.")
-        variance = desired_std ** 2
-        self.mu = math.log((desired_mean ** 2) / math.sqrt(variance + desired_mean ** 2))
-        self.sigma = math.sqrt(math.log(1 + (variance / (desired_mean ** 2))))
+    def __init__(self, desired_mean: float):
+        if desired_mean <= 0:
+            raise ValueError("Mean must be positive.")
+        self.cv = 0.325  # Coefficient of variation
+        # Calculate mu and sigma based on desired mean and CV
+        self.sigma = math.sqrt(math.log(self.cv ** 2 + 1))
+        self.mu = math.log(desired_mean) - (self.sigma ** 2) / 2
 
     def pdf(self, x: float) -> float:
         if x <= 0:

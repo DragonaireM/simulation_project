@@ -37,7 +37,7 @@ class Simulation:
     def setup(self) -> None:
         """Sets up attributes that depend on other parameters."""
         self.number_of_patients = int(self.working_hours * 60 // self.mean_service_time)
-        self.service_distribution = Lognormal(desired_mean=self.mean_service_time, desired_std=self.mean_service_time * 0.5)
+        self.service_distribution = Lognormal(desired_mean=self.mean_service_time)
 
     def unit_test(self, seed: int | None) -> Schedule:
         service_times = self.service_distribution.sample(size=self.number_of_patients, seed=seed)
