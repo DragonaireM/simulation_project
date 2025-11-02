@@ -52,7 +52,7 @@ class Optimisation:
             # Hence only one simulation is run and stored
             return
 
-        for value in tqdm(range(self.range[0], self.range[1] + 1)):
+        for value in tqdm(range(self.range[0], self.range[1] + 1), desc="Simulating progress: "):
             # Adjust the specified variable
             if variable == "scheduled_arrival":
                 sim.scheduled_arrival += value
@@ -473,15 +473,10 @@ class Optimisation:
                 df['change_percentage'] = df['change_in_total_cost'] / original_total_cost * 100
 
                 # Some basic formatting
-                def _format_variable_cost(x: float) -> str:
-                    if x < 0:
-                        return f"-${-x:,.2f}"
-                    return f"${x:,.2f}"
-
-                df['variable_cost'] = df['variable_cost'].apply(_format_variable_cost)
-                df['total_cost'] = df['total_cost'].apply(_format_variable_cost)
-                df['change_in_total_cost'] = df['change_in_total_cost'].apply(_format_variable_cost)
-                df['change_percentage'] = df['change_percentage'].apply(lambda x: f"{x:.2f}%")
+                df['variable_cost'] = [f"-${-x:,.2f}" if x < 0 else f"${x:,.2f}" for x in df['variable_cost']]
+                df['total_cost'] = [f"-${-x:,.2f}" if x < 0 else f"${x:,.2f}" for x in df['total_cost']]
+                df['change_in_total_cost'] = [f"-${-x:,.2f}" if x < 0 else f"${x:,.2f}" for x in df['change_in_total_cost']]
+                df['change_percentage'] = [f"{x:.2f}%" if x < 0 else f"+{x:.2f}%" for x in df["change_percentage"]]
                 print(df)
 
         print("\n" + "="*width)
