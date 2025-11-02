@@ -25,8 +25,8 @@ if __name__ == "__main__":
     # TO OPTIMIZE FOR: (SELECT ONE OUT OF THREE)
     # "scheduled_arrival"
     # "mean_service_time"
-    # "working_hours"
-    VARIABLE = "scheduled_arrival"
+    # "cost_params"
+    VARIABLE = "cost_params"
     SENSITIVITY_ANALYSIS = True  # Set to True to perform sensitivity analysis around optimal value
 
     # SAVE TO DATABASE --- OPTIONAL ---
@@ -87,7 +87,7 @@ if __name__ == "__main__":
         # List of plots to choose from
 
         # 1. Cost against variable value 
-        viz1.plot_cost_against_variable(variable=VARIABLE)
+        # viz1.plot_cost_against_variable(variable=VARIABLE)
         #    VARIABLE and RANGE affect this plot
         #    RANGE should have a distance of at least 2 to make a meaningful comparison
 

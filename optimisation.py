@@ -18,13 +18,13 @@ class Optimisation:
         self.simulations: dict[str, list[Simulation]] = {
             "scheduled_arrival": [],
             "mean_service_time": [],
-            "working_hours": [],
+            "cost_params": [],
             "2d": []
         }
         self.summary: dict[str, list[Summary]] = {
             "scheduled_arrival": [],
             "mean_service_time": [],
-            "working_hours": [],
+            "cost_params": [],
             "2d": []
         }
 
@@ -33,18 +33,26 @@ class Optimisation:
         Optimize the simulation for a specific variable by adjusting its value
         within the defined range and observing the impact on key performance metrics.
         """
-        for value in range(self.range[0], self.range[1] + 1):
-            sim = Simulation(
-                working_hours=self.working_hours,
-                scheduled_arrival=self.scheduled_arrival,
-                mean_service_time=self.mean_service_time,
-                doctors=self.number_of_doctors,
-                iat_distr=TruncatedNormal(),
-                service_distr=Lognormal(desired_mean=self.mean_service_time),
-                cost_params=self.cost_params,
-                seed=self.seed
-            )
+        sim = Simulation(
+            working_hours=self.working_hours,
+            scheduled_arrival=self.scheduled_arrival,
+            mean_service_time=self.mean_service_time,
+            doctors=self.number_of_doctors,
+            iat_distr=TruncatedNormal(),
+            service_distr=Lognormal(desired_mean=self.mean_service_time),
+            cost_params=self.cost_params,
+            seed=self.seed
+        )
+        sim.setup()
+        if variable == "cost_params":
+            sim.simulate(number_of_runs=self.number_of_runs)
+            self.simulations[variable].append(sim)
+            self.summary[variable].append(sim.summary())
+            # Doesn't make sense to optimize cost_params alone
+            # Hence only one simulation is run and stored
+            return
 
+        for value in tqdm(range(self.range[0], self.range[1] + 1)):
             # Adjust the specified variable
             if variable == "scheduled_arrival":
                 sim.scheduled_arrival += value
@@ -62,9 +70,6 @@ class Optimisation:
             self.simulations[variable].append(sim)
             self.summary[variable].append(sim.summary())
 
-            # Display progress
-            print(f"Optimisation for {variable}: set to {getattr(sim, variable)} completed.")
-
     def optimal_value(self, variable: str) -> tuple[Any, float]:
         """
         Determine the optimal value of the specified variable that minimizes total cost.
@@ -72,6 +77,11 @@ class Optimisation:
         simulations = self.simulations[variable]
         if not simulations:
             raise RuntimeError(f"No simulations found for variable '{variable}'. Run optimise_for() first.")
+
+        if len(simulations) == 1:
+            # Only one simulation exists (e.g., for cost_params), return it directly
+            sim = simulations[0]
+            return getattr(sim, variable), sim.total_cost()
 
         min_cost = float('inf')
         optimal_value = None
@@ -93,6 +103,10 @@ class Optimisation:
         simulations = self.simulations[variable]
         if not simulations:
             raise RuntimeError(f"No simulations found for variable '{variable}'. Run optimise_for() first.")
+        
+        if len(simulations) == 1:
+            # Only one simulation exists (e.g., for cost_params), return it directly
+            return simulations[0]
 
         min_cost = float('inf')
         optimal_simulation = None
@@ -344,7 +358,41 @@ class Optimisation:
 
         elif variable == "cost_params":
             # Perform sensitivity analysis for cost_params
-            raise NotImplementedError("Sensitivity analysis for cost_params is not implemented.")
+            # The only metrics that change are the cost-related ones
+            analysis_results: list[dict[str, Any]] = []
+            base_cost_params = list(optimal_solution.cost_params[:3])  # omit last param (labor cost)
+            multipliers = [0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0]
+
+            # Extract base averages
+            averages = self.summary["cost_params"][0].averages
+            avg_idle_time = averages.avg_server_idle_time
+            avg_waiting_time = averages.avg_patient_waiting_time * optimal_solution.number_of_patients
+            avg_overtime = averages.avg_server_overtime
+
+            # Each iteration, pick one cost parameter to vary
+            for i in range(3):
+                for mult in multipliers:
+                    new_cost_params = [param for param in base_cost_params]
+                    new_cost_params[i] = base_cost_params[i] * mult
+                    new_cost_params_tuple = (new_cost_params[0], new_cost_params[1], new_cost_params[2], optimal_solution.cost_params[3])
+
+                    # Calculate new total cost based on unchanged averages
+                    total_cost = (
+                        new_cost_params_tuple[0] * avg_idle_time,
+                        new_cost_params_tuple[1] * avg_waiting_time,
+                        new_cost_params_tuple[2] * avg_overtime,
+                        new_cost_params_tuple[3] * self.number_of_doctors * self.working_hours * 60.0
+                    )
+
+                    analysis_results.append({
+                        "id": i,
+                        "variable": ["Idle Cost", "Waiting Cost", "Overtime Cost"][i],
+                        "multiplier": mult,
+                        "variable_cost": total_cost[i],
+                        "total_cost": total_cost[0] + total_cost[1] + total_cost[2] + total_cost[3],
+                    })
+
+            return analysis_results
         else:
             raise NotImplementedError(f"Sensitivity analysis for variable '{variable}' is not implemented.")
 
@@ -409,7 +457,32 @@ class Optimisation:
 
         elif variable == "cost_params":
             # Sensitivity summary for cost_params
-            raise NotImplementedError("Sensitivity summary for cost_params is not implemented.")
+            original_total_cost = 0.0
+            for mult in [1.0, 0.5, 0.75, 1.25, 1.5, 1.75, 2.0]: # start with 1.0 for reference
+                if mult == 1.0:
+                    for res in analysis_results:
+                        if res['multiplier'] == 1.0:
+                            original_total_cost = res['total_cost']
+                            break # checking once is enough
+                    continue
+                print(f"\n--- Multiplier: {mult} ---")
+                rows = [res for res in analysis_results if res['multiplier'] == mult]
+                df = pd.DataFrame(rows)
+                df = df[['variable', 'variable_cost', 'total_cost']]
+                df['change_in_total_cost'] = df['total_cost'] - original_total_cost
+                df['change_percentage'] = df['change_in_total_cost'] / original_total_cost * 100
+
+                # Some basic formatting
+                def _format_variable_cost(x: float) -> str:
+                    if x < 0:
+                        return f"-${-x:,.2f}"
+                    return f"${x:,.2f}"
+
+                df['variable_cost'] = df['variable_cost'].apply(_format_variable_cost)
+                df['total_cost'] = df['total_cost'].apply(_format_variable_cost)
+                df['change_in_total_cost'] = df['change_in_total_cost'].apply(_format_variable_cost)
+                df['change_percentage'] = df['change_percentage'].apply(lambda x: f"{x:.2f}%")
+                print(df)
 
         print("\n" + "="*width)
         footer = "END OF SENSITIVITY ANALYSIS SUMMARY"
