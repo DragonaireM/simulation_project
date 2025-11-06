@@ -518,7 +518,7 @@ class Simulation:
 
         return combined_df, vr_df
 
-    def compare_variance_reduction(self, num_runs: int = 100, base_seed: int | None = None) -> dict[str, Any]:
+    def compare_variance_reduction(self, num_runs: int = 1000, base_seed: int | None = None) -> dict[str, Any]:
         """
         Compare standard MC vs control variates on the same random samples
         """
