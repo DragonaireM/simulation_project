@@ -208,7 +208,8 @@ class Optimisation:
             for var in self.simulations.keys():
                 selections[var] = "all"
         elif to_save.strip().lower() == "none":
-            return
+            # Do nothing, but not return because we want to print summary
+            pass
         else:
             entries = to_save.split(";")
             for entry in entries:

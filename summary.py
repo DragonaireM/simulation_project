@@ -70,8 +70,8 @@ class PatientMetrics(Section):
         self.avg_waiting_time: float = 0.0
         self.max_waiting_time: float = 0.0
         self.std_waiting_time: float = 0.0
-        self.patients_waiting_over_15_min: int = 0
-        self.percentage_waiting_over_15_min: float = 0.0
+        self.patients_waiting_over_15min: int = 0
+        self.percentage_waiting_over_15min: float = 0.0
         self.waiting_time_95th_percentile: float = 0.0
 
 class SystemMetrics(Section):
