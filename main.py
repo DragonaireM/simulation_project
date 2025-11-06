@@ -26,7 +26,7 @@ if __name__ == "__main__":
     # "scheduled_arrival"
     # "mean_service_time"
     # "cost_params"
-    VARIABLE = "cost_params"
+    VARIABLE = "scheduled_arrival"  # Variable to optimize for
     SENSITIVITY_ANALYSIS = True  # Set to True to perform sensitivity analysis around optimal value
 
     # SAVE TO DATABASE --- OPTIONAL ---
@@ -36,7 +36,7 @@ if __name__ == "__main__":
     #
     # NOTE: Saving to DB will warn you how much space the database file takes
     #       A confirmation prompt will appear before proceeding with the save
-    SAVE_TO_DB = False
+    SAVE_TO_DB = True
     SAVE_TO_PNG = False
 
     # SETTING SEED FOR REPRODUCIBILITY
@@ -69,6 +69,10 @@ if __name__ == "__main__":
     if D == 1:
         model.optimise_for(variable=VARIABLE)
 
+        # Save results to database if enabled
+        if SAVE_TO_DB:
+            model.save_summary_to_db(db_path=f"out/seed{SEED}/opt_{VARIABLE}", print_summary=True)
+
         if SENSITIVITY_ANALYSIS:
             opt_sim = model.optimal_solution(variable=VARIABLE)
             analysis_results = model.sensitivity_analysis(
@@ -76,10 +80,6 @@ if __name__ == "__main__":
                 variable=VARIABLE
             )
             model.sensitivity_summary(analysis_results, variable=VARIABLE)
-
-        # Save results to database if enabled
-        if SAVE_TO_DB:
-            model.save_summary_to_db(db_path=f"out/seed{SEED}/opt_{VARIABLE}", print_summary=False)
 
         # Initialize visualizations
         viz1 = ClinicVisualization(model.simulations[VARIABLE])

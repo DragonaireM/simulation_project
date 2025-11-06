@@ -607,7 +607,7 @@ class Simulation:
     
     def __str__(self) -> str:
         # Use notation of queueing systems (e.g., M/M/1)
-        return (f"{int(self.scheduled_arrival)}/{int(self.mean_service_time)}/{int(self.doctors)}")
+        return (f"{int(self.scheduled_arrival)}/{float(self.mean_service_time)}/{int(self.doctors)}")
     
     def __repr__(self) -> str:
         # Same as __str__

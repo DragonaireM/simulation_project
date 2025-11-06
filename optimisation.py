@@ -33,39 +33,36 @@ class Optimisation:
         Optimize the simulation for a specific variable by adjusting its value
         within the defined range and observing the impact on key performance metrics.
         """
-        sim = Simulation(
-            working_hours=self.working_hours,
-            scheduled_arrival=self.scheduled_arrival,
-            mean_service_time=self.mean_service_time,
-            doctors=self.number_of_doctors,
-            iat_distr=TruncatedNormal(),
-            service_distr=Lognormal(desired_mean=self.mean_service_time),
-            cost_params=self.cost_params,
-            seed=self.seed
-        )
-        sim.setup()
-        if variable == "cost_params":
-            sim.simulate(number_of_runs=self.number_of_runs)
-            self.simulations[variable].append(sim)
-            self.summary[variable].append(sim.summary())
-            # Doesn't make sense to optimize cost_params alone
-            # Hence only one simulation is run and stored
-            return
-
         for value in tqdm(range(self.range[0], self.range[1] + 1), desc="Simulating progress: "):
+            # Initialize a new simulation instance with base parameters
+            sim = Simulation(
+                working_hours=self.working_hours,
+                scheduled_arrival=self.scheduled_arrival,
+                mean_service_time=self.mean_service_time,
+                doctors=self.number_of_doctors,
+                iat_distr=TruncatedNormal(),
+                service_distr=Lognormal(desired_mean=self.mean_service_time),
+                cost_params=self.cost_params,
+                seed=self.seed
+            )
             # Adjust the specified variable
             if variable == "scheduled_arrival":
                 sim.scheduled_arrival += value
             elif variable == "mean_service_time":
                 sim.mean_service_time += value
-                sim.setup()  # Re-setup to update dependent attributes
             elif variable == "working_hours":
                 sim.working_hours += value
-                sim.setup()  # Re-setup to update dependent attributes
+            elif variable == "cost_params":
+                # Not applicable here
+                pass
             else:
                 raise ValueError(f"Unknown variable '{variable}' for optimisation.")
 
+            sim.setup()
             # Run the simulation
+            if self.simulations[variable] and sim in self.simulations[variable]:
+                # Skip existing simulation if already run
+                continue
             sim.simulate(number_of_runs=self.number_of_runs)
             self.simulations[variable].append(sim)
             self.summary[variable].append(sim.summary())
