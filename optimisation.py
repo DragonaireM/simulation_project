@@ -262,9 +262,9 @@ class Optimisation:
 
                 # Print Averages Table
                 print("\nAVERAGES TABLE (MINUTES):")
-                print(f"  Average server idle time:     {s['averages']['average_server_idle_time']:>12.4f} minutes")
-                print(f"  Average patient waiting time: {s['averages']['average_patient_waiting_time']:>12.4f} minutes")
-                print(f"  Average server overtime:      {s['averages']['average_server_overtime']:>12.4f} minutes")
+                print(f"  Average server idle time:     {s['averages']['avg_server_idle_time']:>12.4f} minutes")
+                print(f"  Average patient waiting time: {s['averages']['avg_patient_waiting_time']:>12.4f} minutes")
+                print(f"  Average server overtime:      {s['averages']['avg_server_overtime']:>12.4f} minutes")
                 print(f"  Total Cost:                   ${s['averages']['total_cost']:>12.2f}")
 
                 # Print Patient Metrics Table
