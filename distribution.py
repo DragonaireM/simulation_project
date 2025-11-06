@@ -30,16 +30,22 @@ class Exponential:
         rng = np.random.default_rng(seed)
         return rng.exponential(scale=1.0 / self.rate, size=size)
     
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Exponential):
+            return NotImplemented
+        return self.rate == other.rate
+    
 class Lognormal:
     """
     Represents a lognormal distribution with given mu and sigma parameters.
     """
-    def __init__(self, desired_mean: float, desired_std: float):
-        if desired_mean <= 0 or desired_std <= 0:
-            raise ValueError("Mean and standard deviation must be positive.")
-        variance = desired_std ** 2
-        self.mu = math.log((desired_mean ** 2) / math.sqrt(variance + desired_mean ** 2))
-        self.sigma = math.sqrt(math.log(1 + (variance / (desired_mean ** 2))))
+    def __init__(self, desired_mean: float):
+        if desired_mean <= 0:
+            raise ValueError("Mean must be positive.")
+        self.cv = 0.325  # Coefficient of variation
+        # Calculate mu and sigma based on desired mean and CV
+        self.sigma = math.sqrt(math.log(self.cv ** 2 + 1))
+        self.mu = math.log(desired_mean) - (self.sigma ** 2) / 2
 
     def pdf(self, x: float) -> float:
         if x <= 0:
@@ -61,6 +67,14 @@ class Lognormal:
     def sample(self, size: int=1, seed: int | None=None) -> np.ndarray:
         rng = np.random.default_rng(seed)
         return rng.lognormal(mean=self.mu, sigma=self.sigma, size=size)
+    
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Lognormal):
+            return NotImplemented
+        return (
+            math.isclose(self.mu, other.mu, rel_tol=1e-9, abs_tol=1e-12)
+            and math.isclose(self.sigma, other.sigma, rel_tol=1e-9, abs_tol=1e-12)
+        )
 
 class Triangular:
     """
@@ -196,3 +210,8 @@ class TruncatedNormal:
         rng = np.random.default_rng(seed)
         samples = rng.normal(loc=self.mu, scale=self.sigma, size=size)
         return np.clip(samples, self.LOWER_BOUND, self.UPPER_BOUND)
+    
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, TruncatedNormal):
+            return NotImplemented
+        return self.mu == other.mu and self.sigma == other.sigma

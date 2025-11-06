@@ -39,6 +39,8 @@ Variance of mean waiting times: 1170.201110
 Standard error: 34.208202
 ================================================================================
 
+## CONTROL VARIATES MONTE CARLO SIMULATION
+## CONTROL VARIATES SUMMARY
 
 ================================================================================
 CONTROL VARIATES MONTE CARLO SIMULATION
@@ -437,6 +439,7 @@ Overall Statistics Across Runs:
   Between-run variance reduction: 5.88%
 ================================================================================
 
+## KEY TAKEAWAYS:
 
 ================================================================================
 VARIANCE REDUCTION COMPARISON

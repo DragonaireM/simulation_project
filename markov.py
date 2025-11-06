@@ -7,11 +7,12 @@ class MarkovChain:
     def __init__(self, states: list[int], staying_times: list[float]):
         self.states = states
         self.staying_times = staying_times
+        self.total_time = sum(staying_times)
 
     # Note this is equal to L in little's formula
     def get_average_queue_length(self) -> float:
         weighted_sum = sum(s * t for s, t in zip(self.states, self.staying_times))
-        return weighted_sum
+        return weighted_sum / self.total_time if self.total_time > 0 else 0
     
     def get_server_idle_time(self, servers: int=1) -> float:
         idle_time = 0.0
@@ -37,7 +38,7 @@ class MarkovChain:
         return waiting_times
 
     def get_server_overtime(self, working_hours: float, servers: int=1) -> float:
-        total_time = sum(self.staying_times)
+        total_time = self.total_time
         overtime = 0.0
         for i in range(servers):
             overtime += max(0.0, total_time - working_hours * 60.0)
@@ -46,11 +47,10 @@ class MarkovChain:
     
     def get_doctor_utilization(self) -> float:
         busy_time = 0.0
-        total_time = sum(self.staying_times)
         for state, time in zip(self.states, self.staying_times):
             if state > 0:
                 busy_time += time
-        return (busy_time / total_time) * 100  # percentage
+        return (busy_time / self.total_time) * 100  # percentage
     
     def to_dataframe(self) -> pd.DataFrame:
         return pd.DataFrame({

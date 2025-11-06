@@ -1,13 +1,13 @@
-from distribution import Exponential, Lognormal, Triangular, TruncatedNormal
+from distribution import Exponential, Lognormal, TruncatedNormal
 from schedule import Schedule
 import pandas as pd
 from typing import Any
-import json
 import sqlite3
 import numpy as np
 import os
 import tempfile
 from tqdm import tqdm
+from summary import Summary, Statistic, Schedules, WaitingTimes, PatientMetrics, Averages, SystemMetrics
 
 class Simulation:
     def __init__(self,
@@ -26,29 +26,18 @@ class Simulation:
         self.mean_service_time = mean_service_time
         self.doctors = doctors
         self.queue_capacity = queue_capacity
-        self.number_of_patients = int(working_hours * 60 // mean_service_time)
         self.iat_distribution = iat_distr
         self.service_distribution = service_distr
         self.schedules: list[Schedule] = []
         self.cost_params = cost_params  # idle, waiting, overtime, labor costs
         self.seed = seed
-        self.control_variate_info = None  # Store control variate information if used
+        self.control_variate_info = {}  # Store control variate information if used
+        self.setup()
 
-    def __getitem__(self, key: str) -> Any:
-        """
-        Allow dict-like access to attributes.
-        """
-        if hasattr(self, key):
-            return getattr(self, key)
-        raise KeyError(f"Key '{key}' not found in Simulation attributes.")
-    
-    def __str__(self) -> str:
-        # Use notation of queueing systems (e.g., M/M/1)
-        return (f"{int(self.scheduled_arrival)}/{int(self.mean_service_time)}/{int(self.doctors)}")
-    
-    def __repr__(self) -> str:
-        # Same as __str__
-        return self.__str__()
+    def setup(self) -> None:
+        """Sets up attributes that depend on other parameters."""
+        self.number_of_patients = int(self.working_hours * 60 // self.mean_service_time)
+        self.service_distribution = Lognormal(desired_mean=self.mean_service_time)
 
     def unit_test(self, seed: int | None) -> Schedule:
         service_times = self.service_distribution.sample(size=self.number_of_patients, seed=seed)
@@ -70,16 +59,10 @@ class Simulation:
             self.unit_test(seed = None if self.seed is None else self.seed + i)
         return self.schedules
 
-    def summary(self, print_summary: bool = False) -> dict[str, Any]:
+    def summary(self, print_summary: bool = False) -> Summary:
         """
-        Return:
-          {
-            "patient_metrics": { ... },
-            "system_metrics": { ... },
-            "averages": { ... },
-            "schedules": [ pd.DataFrame, pd.DataFrame, ... ],
-            "waiting_times": [ float, float, ... ]
-          }
+        Returns:
+            A Summary object containing various metrics from the simulation.
 
         Args:
             print_summary: If True, prints a formatted summary to terminal
@@ -102,46 +85,57 @@ class Simulation:
             overtime_times.append(markov_chain.get_server_overtime(self.working_hours))
             queue_lengths.append(markov_chain.get_average_queue_length())
             doctor_utilizations.append(markov_chain.get_doctor_utilization())
-            total_session_time.append(sum(markov_chain.staying_times))
+            total_session_time.append(markov_chain.total_time)
 
-        patient_metrics: dict[str, Any] = {
-            'avg_waiting_time': np.mean(waiting_times),
-            'max_waiting_time': np.max(waiting_times),
-            'std_waiting_time': np.std(waiting_times),
-            'patients_waiting_over_15min': np.sum(np.array(waiting_times) > 15) or 0,
-            'percentage_waiting_over_15min': np.mean(np.array(waiting_times) > 15) * 100,
-            'waiting_time_95th_percentile': np.percentile(waiting_times, 95)
-        }
+        # Create a Summary object
+        summary = Summary()
 
-        system_metrics = {
-            'doctor_utilization': np.mean(doctor_utilizations),
-            'avg_queue_length': np.mean(queue_lengths),
-            'throughput': np.mean([self.number_of_patients / total for total in total_session_time if total > 0]),  # patients per minute
-        }
+        patient_metrics = PatientMetrics()
 
-        averages = {
-            "average_server_idle_time": float(np.mean(idle_times)),
-            "average_patient_waiting_time": float(np.mean(waiting_times)),
-            "average_server_overtime": float(np.mean(overtime_times)),
-            "Total Cost": float(np.mean(idle_times) * self.cost_params[0] +
+        patient_metrics.add_stats(Statistic("Avg Waiting Time", np.mean(waiting_times)))
+        patient_metrics.add_stats(Statistic("Max Waiting Time", np.max(waiting_times)))
+        patient_metrics.add_stats(Statistic("Std Waiting Time", np.std(waiting_times)))
+        patient_metrics.add_stats(Statistic("Patients Waiting Over 15 Min", np.sum(np.array(waiting_times) > 15) or 0))
+        patient_metrics.add_stats(Statistic("Percentage Waiting Over 15 Min", np.mean(np.array(waiting_times) > 15) * 100))
+        patient_metrics.add_stats(Statistic("Waiting Time 95th Percentile", np.percentile(waiting_times, 95)))
+
+        summary.add_section(patient_metrics)
+
+        system_metrics = SystemMetrics()
+
+        system_metrics.add_stats(Statistic("Doctor Utilization", np.mean(doctor_utilizations)))
+        system_metrics.add_stats(Statistic("Avg Queue Length", np.mean(queue_lengths)))
+        system_metrics.add_stats(Statistic("Throughput", np.mean([self.number_of_patients / total for total in total_session_time if total > 0])))
+
+        summary.add_section(system_metrics)
+
+        average_costs = Averages()
+
+        self.cost = float(np.mean(idle_times) * self.cost_params[0] +
                                 np.mean(waiting_times) * self.number_of_patients * self.cost_params[1] +
                                 np.mean(overtime_times) * self.cost_params[2] +
                                 self.doctors * self.working_hours * 60.0 * self.cost_params[3])
-        }
 
-        self.summaries: dict[str, Any] = {
-            "patient_metrics": patient_metrics,
-            "system_metrics": system_metrics,
-            "averages": averages,
-            "schedules": schedules_dfs,
-            "waiting_times": waiting_times
-            }
+        average_costs.add_stats(Statistic("Avg Server Idle Time", np.mean(idle_times)))
+        average_costs.add_stats(Statistic("Avg Patient Waiting Time", np.mean(waiting_times)))
+        average_costs.add_stats(Statistic("Avg Server Overtime", np.mean(overtime_times)))
+        average_costs.add_stats(Statistic("Total Cost", self.cost))
 
-        # Print formatted summary if requested
+        summary.add_section(average_costs)
+
+        schedules_section = Schedules()
+        schedules_section.extend(schedules_dfs)
+        summary.add_section(schedules_section)
+
+        waiting_times_section = WaitingTimes()
+        waiting_times_section.extend(waiting_times)
+        summary.add_section(waiting_times_section)
+
+        self.summaries = summary
         if print_summary:
             self._print_summary()
 
-        return self.summaries
+        return summary
 
     def _print_summary(self) -> None:
         """Print formatted summary to terminal"""
@@ -169,18 +163,18 @@ class Simulation:
         print(f"  Patients waiting > 15 min: {s['patient_metrics']['patients_waiting_over_15min']}")
 
         print(f"\nServer Metrics (MINUTES per session):")
-        print(f"  Average idle time: {s['averages']['average_server_idle_time']:.4f} minutes")
-        print(f"  Average overtime: {s['averages']['average_server_overtime']:.4f} minutes")
+        print(f"  Average idle time: {s['averages']['avg_server_idle_time']:.4f} minutes")
+        print(f"  Average overtime: {s['averages']['avg_server_overtime']:.4f} minutes")
 
         print(f"\nSystem Metrics:")
         print(f"  Doctor utilization: {s['system_metrics']['doctor_utilization']:.2%}")
         print(f"  Average queue length: {s['system_metrics']['avg_queue_length']:.4f} patients")
         print(f"  Throughput: {s['system_metrics']['throughput']:.4f} patients/minute")
 
-        print(f"\nTotal Cost: ${s['averages']['Total Cost']:.2f}")
+        print(f"\nTotal Cost: ${s['averages']['total_cost']:.2f}")
 
         # Print control variate information if available
-        if self.control_variate_info is not None:
+        if self.control_variate_info:
             cv_info = self.control_variate_info
             print("\n" + "-"*80)
             print("CONTROL VARIATES VARIANCE REDUCTION")
@@ -206,7 +200,7 @@ class Simulation:
         """
         if not hasattr(self, "summaries"):
             self.summary()
-        return self.summaries["averages"]["Total Cost"]
+        return self.summaries["averages"]["total_cost"]
 
     def _total_cost(self) -> float:
         """
@@ -236,11 +230,6 @@ class Simulation:
                             self.doctors * self.working_hours * 60.0 * self.cost_params[3])
         return total_cost
 
-    def write_summaries_to_json(self, filename: str) -> None:
-        summaries = self.summaries
-        with open(filename, 'w') as f:
-            json.dump(summaries, f, indent=4)
-
     def write_summaries_to_sqlite(self, filepath: str) -> None:
         """
         Write schedules as separate tables to a single SQLite DB.
@@ -255,17 +244,18 @@ class Simulation:
         conn = sqlite3.connect(filename)
         try:
             # write averages / metrics as two-column tables (key, value)
-            pd.Series(summaries["averages"], name="value").reset_index().rename(columns={"index": "metric"}).to_sql(
+            summaries.averages.to_dataframe().to_sql(
                 "averages", conn, index=False, if_exists="replace"
             )
-            pd.Series(summaries["patient_metrics"], name="value").reset_index().rename(columns={"index": "metric"}).to_sql(
+            summaries.patient_metrics.to_dataframe().to_sql(
                 "patient_metrics", conn, index=False, if_exists="replace"
             )
-            pd.Series(summaries["system_metrics"], name="value").reset_index().rename(columns={"index": "metric"}).to_sql(
+            # system_metrics is already a DataFrame; write it directly instead of trying to build a Series from a DataFrame
+            summaries.system_metrics.to_dataframe().to_sql(
                 "system_metrics", conn, index=False, if_exists="replace"
             )
             # write each schedule as its own table
-            for i, df in enumerate(summaries["schedules"], start=1):
+            for i, df in enumerate(summaries.schedules.arr, start=1):
                 tbl = f"schedule_run_{i}"
                 df.to_sql(tbl, conn, index=False, if_exists="replace")
         finally:
@@ -284,12 +274,12 @@ class Simulation:
 
         # sizes for the small dict-like tables
         for key in ("averages", "patient_metrics", "system_metrics"):
-            d = self.summaries.get(key, {})
+            d = self.summaries[key].__dict__
             # rough: each key and value as text, estimate len of repr
             total_bytes += sum(len(str(k)) + len(str(v)) for k, v in d.items())
 
         # schedules: sum pandas memory usage
-        for df in self.summaries.get("schedules", []):
+        for df in self.summaries.schedules.arr:
             try:
                 total_bytes += int(df.memory_usage(deep=True).sum())
             except Exception:
@@ -382,7 +372,7 @@ class Simulation:
         if base_seed is None:
             base_seed = self.seed if self.seed is not None else 42
 
-        all_results = []
+        all_results: list[pd.DataFrame] = []
 
         for run in tqdm(range(num_runs), desc="Standard MC Simulation"):
             seed = base_seed + run
@@ -395,7 +385,7 @@ class Simulation:
         # Calculate statistics
         run_means = combined_df.groupby('run_id')['Waiting_Time'].mean()
         overall_mean = run_means.mean()
-        overall_var = run_means.var(ddof=1)
+        overall_var: float = float(run_means.var(ddof=1))
 
         print(f"\n{'='*80}")
         print("STANDARD MC SUMMARY")
@@ -427,8 +417,8 @@ class Simulation:
         if base_seed is None:
             base_seed = self.seed if self.seed is not None else 42
 
-        all_results = []
-        variance_reduction_info = []
+        all_results: list[pd.DataFrame] = []
+        variance_reduction_info: list[dict[str, Any]] = []
 
         for run in tqdm(range(num_runs), desc="Control Variates Simulation"):
             # Generate SAME random sequence for fair comparison
@@ -544,7 +534,7 @@ class Simulation:
         standard_means = df_standard.groupby('run_id')['Waiting_Time'].mean()
         cv_means = df_cv.groupby('run_id')['Waiting_Time'].mean()
 
-        comparison = {
+        comparison: dict[str, Any] = {
             'num_runs': num_runs,
             'base_seed': base_seed,
             'standard_mc': {
@@ -569,7 +559,7 @@ class Simulation:
         )
 
         # Store control variate info for summary display
-        self.control_variate_info = {
+        self.control_variate_info: dict[str, float] = {
             'variance_reduction_percent': comparison['variance_reduction_percent'],
             'efficiency_gain': comparison['efficiency_gain'],
             'avg_correlation': float(vr_info['correlation_ws'].mean()),
@@ -600,4 +590,40 @@ class Simulation:
         print(f"{'='*80}\n")
 
         return comparison
+
+    def __getitem__(self, key: str) -> Any:
+        """
+        Allow dict-like access to attributes.
+        """
+        if hasattr(self, key):
+            return getattr(self, key)
+        raise KeyError(f"Key '{key}' not found in Simulation attributes.")
+    
+    def __setitem__(self, key: str, value: Any) -> None:
+        """
+        Allow dict-like setting of attributes.
+        """
+        setattr(self, key, value)
+    
+    def __str__(self) -> str:
+        # Use notation of queueing systems (e.g., M/M/1)
+        return (f"{int(self.scheduled_arrival)}/{int(self.mean_service_time)}/{int(self.doctors)}")
+    
+    def __repr__(self) -> str:
+        # Same as __str__
+        return self.__str__()
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Simulation):
+            return NotImplemented
+        return (self.working_hours == other.working_hours and
+                self.scheduled_arrival == other.scheduled_arrival and
+                self.mean_service_time == other.mean_service_time and
+                self.doctors == other.doctors and
+                self.queue_capacity == other.queue_capacity and
+                self.number_of_patients == other.number_of_patients and
+                self.iat_distribution == other.iat_distribution and
+                self.service_distribution == other.service_distribution and
+                self.cost_params == other.cost_params and
+                self.seed == other.seed)
 

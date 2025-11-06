@@ -4,9 +4,9 @@ import matplotlib.pyplot as plt
 
 if __name__ == "__main__":
     # CONSTANT VARIABLES (Only modify if exploring different scenarios)
-    WORKING_HOURS = 10.0  # hours
-    SCHEDULED_ARRIVAL = 17.0 # minutes - how long the appointment slots are spaced apart
-    MEAN_SERVICE_TIME = 25.0 # minutes
+    WORKING_HOURS = 8.0  # hours
+    SCHEDULED_ARRIVAL = 15 # minutes - how long the appointment slots are spaced apart
+    MEAN_SERVICE_TIME = 15.5 # minutes
     NUMBER_OF_DOCTORS = 1
 
     # Change to 1000 if doing 2D optimisation to reduce computation time
@@ -16,7 +16,7 @@ if __name__ == "__main__":
     # NOTE: Adjust RANGE and VARIABLE to explore different optimisation scenarios
     #       Make sure VARIABLE + RANGE make sense together (e.g., don't set negative service times)
     #       Inclusive of start and end values
-    RANGE = (-2, 2)
+    RANGE = (-3, 3)
 
     # Cost parameters: (idle_cost/min, waiting_cost/min/patient, overtime_cost/min, labor_cost/min/doctor)
     # Labor cost parameter currently not used, hence set to 0.0
@@ -25,8 +25,9 @@ if __name__ == "__main__":
     # TO OPTIMIZE FOR: (SELECT ONE OUT OF THREE)
     # "scheduled_arrival"
     # "mean_service_time"
-    # "working_hours"
-    VARIABLE = "scheduled_arrival"
+    # "cost_params"
+    VARIABLE = "cost_params"
+    SENSITIVITY_ANALYSIS = True  # Set to True to perform sensitivity analysis around optimal value
 
     # SAVE TO DATABASE --- OPTIONAL ---
     # Turned off by default, change to True to enable saving
@@ -35,8 +36,8 @@ if __name__ == "__main__":
     #
     # NOTE: Saving to DB will warn you how much space the database file takes
     #       A confirmation prompt will appear before proceeding with the save
-    SAVE_TO_DB = True
-    SAVE_TO_PNG = True
+    SAVE_TO_DB = False
+    SAVE_TO_PNG = False
 
     # SETTING SEED FOR REPRODUCIBILITY
     # Set to None for random behavior
@@ -67,10 +68,18 @@ if __name__ == "__main__":
     D = 1
     if D == 1:
         model.optimise_for(variable=VARIABLE)
-    
+
+        if SENSITIVITY_ANALYSIS:
+            opt_sim = model.optimal_solution(variable=VARIABLE)
+            analysis_results = model.sensitivity_analysis(
+                optimal_solution=opt_sim,
+                variable=VARIABLE
+            )
+            model.sensitivity_summary(analysis_results, variable=VARIABLE)
+
         # Save results to database if enabled
         if SAVE_TO_DB:
-            model.save_summary_to_db(db_path=f"out/seed{SEED}/opt_{VARIABLE}")
+            model.save_summary_to_db(db_path=f"out/seed{SEED}/opt_{VARIABLE}", print_summary=False)
 
         # Initialize visualizations
         viz1 = ClinicVisualization(model.simulations[VARIABLE])
@@ -78,7 +87,7 @@ if __name__ == "__main__":
         # List of plots to choose from
 
         # 1. Cost against variable value 
-        # -> viz1.plot_cost_against_variable(variable=VARIABLE)
+        # viz1.plot_cost_against_variable(variable=VARIABLE)
         #    VARIABLE and RANGE affect this plot
         #    RANGE should have a distance of at least 2 to make a meaningful comparison
 
@@ -88,20 +97,20 @@ if __name__ == "__main__":
         #    RANGE doesn't affect this plot
 
         # 3. Schedule Gantt chart 
-        # -> viz1.plot_schedule_gantt(schedule_index=0)
+        # viz1.plot_schedule_gantt(schedule_index=0)
         #    Choose any schedule_index from 0 to NUMBER_OF_RUNS-1
         #    RANGE doesn't affect this plot
 
         # 4. Cost comparison stacked bar chart
-        viz1.plot_cost_comparison()
+        # viz1.plot_cost_comparison()
         #    RANGE should have a distance of at least 2 to make a meaningful comparison
 
         # 5. Cost breakdown pie chart
-        # -> viz1.plot_cost_breakdown()
+        # viz1.plot_cost_breakdown()
         #    RANGE doesn't affect this plot
 
         # 6. Waiting time histogram
-        # -> viz1.plot_waiting_time_distribution()
+        # viz1.plot_waiting_time_distribution()
         #    RANGE doesn't affect this plot
 
         # 7. Waiting time vs Utilization trade-off

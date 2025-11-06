@@ -51,7 +51,7 @@ class ClinicVisualization:
         title = f"Total Cost vs {variable.replace('_', ' ').title()}"
 
         manipulated_var = [data[variable] for data in self.data]
-        total_costs = [data.summaries["averages"]["Total Cost"] for data in self.data]
+        total_costs = [round(data.summaries.averages.total_cost, 2) for data in self.data]
         optimal_cost = min(total_costs)
 
         ax.plot(manipulated_var, total_costs, 'o-', linewidth=2, markersize=8, color=self.colors[0], label='Total Cost')
@@ -61,6 +61,8 @@ class ClinicVisualization:
 
         ax.set_xlabel(f"{variable.title()}", fontsize=self.config['fontsize'])
         ax.set_ylabel('Total Cost ($)', fontsize=self.config['fontsize'])
+        for i in range(len(manipulated_var)):
+            ax.annotate(f"{total_costs[i]:.2f}", (manipulated_var[i], total_costs[i]), textcoords="offset points", xytext=(0,10), ha='center', clip_on=False)
         ax.set_title(title, fontsize=self.config['fontsize'] + 2)
         ax.grid(True, alpha=0.3)
         ax.legend()
@@ -82,9 +84,9 @@ class ClinicVisualization:
         assert ax1 is not None and ax2 is not None
         
         scheduled_arrivals = [data.scheduled_arrival for data in self.data]
-        avg_waiting_times = [data.summaries["patient_metrics"]["avg_waiting_time"] for data in self.data]
-        doctor_utilizations = [data.summaries["system_metrics"]["doctor_utilization"] for data in self.data]
-        
+        avg_waiting_times = [data.summaries.patient_metrics.avg_waiting_time for data in self.data]
+        doctor_utilizations = [data.summaries.system_metrics.doctor_utilization for data in self.data]
+
         # Left: Waiting times
         ax1.plot(scheduled_arrivals, avg_waiting_times, 'ro-', linewidth=2, markersize=6, label='Avg Waiting Time')
         ax1.set_xlabel('Scheduled Arrival Time (min)')
@@ -120,7 +122,7 @@ class ClinicVisualization:
         if ax is None:
             _fig, ax = plt.subplots(figsize=self.config['figsize'])
 
-        waiting_times: list[float] = self.data[0].summaries['waiting_times']
+        waiting_times: list[float] = self.data[0].summaries.waiting_times.arr
 
         _n, bins, _patches = ax.hist(waiting_times, bins=bins, alpha=0.7, color=self.colors[0], edgecolor='black', density=True)
         
@@ -155,14 +157,15 @@ class ClinicVisualization:
         if ax is None:
             _fig, ax = plt.subplots(figsize=self.config['figsize'])
 
-        scheduled_arrival = self.data[0].scheduled_arrival
-        
+        sim = self.data[0]
+        scheduled_arrival = sim.scheduled_arrival
+
         # Get costs for this inter-arrival time
         costs = [
-            float(self.data[0].summaries["averages"]["average_patient_waiting_time"] * self.data[0].number_of_patients * self.data[0].cost_params[1]),
-            float(self.data[0].summaries["averages"]["average_server_idle_time"] * self.data[0].cost_params[0]),
-            float(self.data[0].summaries["averages"]["average_server_overtime"] * self.data[0].cost_params[2]),
-            float(self.data[0].doctors * self.data[0].working_hours * 60.0 * self.data[0].cost_params[3])
+            float(sim.summaries["averages"]["avg_patient_waiting_time"] * sim.number_of_patients * sim.cost_params[1]),
+            float(sim.summaries["averages"]["avg_server_idle_time"] * sim.cost_params[0]),
+            float(sim.summaries["averages"]["avg_server_overtime"] * sim.cost_params[2]),
+            float(sim.doctors * sim.working_hours * 60.0 * sim.cost_params[3])
         ]
         labels = ['Waiting', 'Idle', 'Overtime', 'Labor']
 
@@ -192,9 +195,9 @@ class ClinicVisualization:
             _fig, ax = plt.subplots(figsize=self.config['figsize'])
         
         scheduled_arrivals = [data.scheduled_arrival for data in self.data]
-        waiting_costs = [data.summaries['averages']['average_patient_waiting_time'] * data.number_of_patients * data.cost_params[1] for data in self.data]
-        idle_costs = [data.summaries['averages']['average_server_idle_time'] * data.cost_params[0] for data in self.data]
-        overtime_costs = [data.summaries['averages']['average_server_overtime'] * data.cost_params[2] for data in self.data]
+        waiting_costs = [data.summaries['averages']['avg_patient_waiting_time'] * data.number_of_patients * data.cost_params[1] for data in self.data]
+        idle_costs = [data.summaries['averages']['avg_server_idle_time'] * data.cost_params[0] for data in self.data]
+        overtime_costs = [data.summaries['averages']['avg_server_overtime'] * data.cost_params[2] for data in self.data]
         labor_costs = [data.doctors * data.working_hours * 60.0 * data.cost_params[3] for data in self.data]
 
         bar_width = 0.8
