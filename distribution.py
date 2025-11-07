@@ -134,7 +134,7 @@ class TruncatedNormal:
     LOWER_BOUND = -30.0  # minutes (can't arrive more than 30 min early)
     UPPER_BOUND = 30.0   # minutes (can't arrive more than 30 min late)
 
-    def __init__(self, mu: float = 0.0, sigma: float = 10.0):
+    def __init__(self, mu: float = -15.0, sigma: float = 20.0):
         if sigma <= 0:
             raise ValueError("Standard deviation (sigma) must be positive.")
         self.mu = mu
