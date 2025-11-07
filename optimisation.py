@@ -6,7 +6,7 @@ from tqdm import tqdm
 import pandas as pd
 
 class Optimisation:
-    def __init__(self, range: tuple[int, int]=(-5, 5), working_hours: float=10.0, mean_service_time: float=25.0, number_of_doctors: int=1, number_of_runs: int=10000, scheduled_arrival: float=17.0, cost_params: tuple[float, float, float, float]=(4.0, 0.8, 6.0, 4.0), seed: int | None = None) -> None:
+    def __init__(self, range: tuple[int, int]=(-5, 5), working_hours: float=8.0, mean_service_time: float=15.5, number_of_doctors: int=1, number_of_runs: int=10000, scheduled_arrival: float=15.0, cost_params: tuple[float, float, float, float]=(1.0, 0.2, 1.5, 0.0), seed: int | None = None) -> None:
         self.working_hours = working_hours  # hours
         self.mean_service_time = mean_service_time   # minutes
         self.number_of_doctors = number_of_doctors

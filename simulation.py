@@ -18,7 +18,7 @@ class Simulation:
                  service_distr: Exponential | Lognormal,
                  doctors: int=1,
                  queue_capacity: float=float('inf'),
-                 cost_params: tuple[float, float, float, float]=(4.0, 0.2, 6.0, 4.0),
+                 cost_params: tuple[float, float, float, float]=(1.0, 0.2, 1.5, 0.0),
                  seed: int | None=None
                  ):
         self.working_hours = working_hours
@@ -42,13 +42,13 @@ class Simulation:
     def unit_test(self, seed: int | None) -> Schedule:
         service_times = self.service_distribution.sample(size=self.number_of_patients, seed=seed)
         interarrival_deviation = self.iat_distribution.sample(size=self.number_of_patients, seed=seed)
-        interarrival_times = [self.scheduled_arrival + dev for dev in interarrival_deviation]
-        interarrival_times[0] -= self.scheduled_arrival  # first arrival doesn't have to wait for "previous" patient to end service
+        arrival_times = [i * self.scheduled_arrival + dev for i, dev in enumerate(interarrival_deviation)]
+        
         schedule = Schedule(self.working_hours)
         schedule.setup_schedule(
-            interarrival_times, 
-            service_times, 
-            servers=self.doctors, 
+            arrival_times,
+            service_times,
+            servers=self.doctors,
             queue_capacity=self.queue_capacity
             )
         self.schedules.append(schedule)
@@ -334,12 +334,11 @@ class Simulation:
         """
         service_times = self.service_distribution.sample(size=self.number_of_patients, seed=seed)
         interarrival_deviation = self.iat_distribution.sample(size=self.number_of_patients, seed=seed)
-        interarrival_times = [self.scheduled_arrival + dev for dev in interarrival_deviation]
-        interarrival_times[0] -= self.scheduled_arrival
+        arrival_times = [i * self.scheduled_arrival + dev for i, dev in enumerate(interarrival_deviation)]
 
         schedule = Schedule(self.working_hours)
         schedule.setup_schedule(
-            interarrival_times,
+            arrival_times,
             service_times,
             servers=self.doctors,
             queue_capacity=self.queue_capacity

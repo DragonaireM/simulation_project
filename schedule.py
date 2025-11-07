@@ -34,7 +34,7 @@ class Schedule:
         self.waiting_times: list[float] = []
         self.overtime_time = 0.0
 
-    def setup_schedule(self, interarrival_times: list[float], service_times: np.ndarray, servers: int=1, queue_capacity: float=float('inf')):
+    def setup_schedule(self, arrival_times: list[float], service_times: np.ndarray, servers: int=1, queue_capacity: float=float('inf')):
         """Sets up the schedule for potentially multiple servers.
 
         Approach:
@@ -49,17 +49,11 @@ class Schedule:
         This avoids sorting all end times each iteration.
         """
         # save the variables (for potential future use)
-        interarrival_times[0] = max(0.0, interarrival_times[0])  # ensure first arrival is non-negative
-        self.interarrival_times = interarrival_times
+        arrival_times[0] = max(0.0, arrival_times[0])  # ensure first arrival is non-negative
+        self.arrival_times = arrival_times
         self.service_times = service_times
         self.servers = servers
         self.queue_capacity = queue_capacity
-
-        # cumulative arrival times
-        current_time = 0.0
-        for iat in interarrival_times:
-            current_time += iat
-            self.arrival_times.append(current_time)
 
         # min-heap of end times for busy servers
         busy: list[float] = []
