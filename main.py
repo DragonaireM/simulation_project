@@ -69,9 +69,12 @@ if __name__ == "__main__":
     if D == 1:
         model.optimise_for(variable=VARIABLE)
 
+        # Always print summary to console (for all simulations of the optimized variable)
+        model.print_summary_to_console(selections={VARIABLE: "all"})
+
         # Save results to database if enabled
         if SAVE_TO_DB:
-            model.save_summary_to_db(db_path=f"out/seed{SEED}/opt_{VARIABLE}", print_summary=True)
+            model.save_summary_to_db(db_path=f"out/seed{SEED}/opt_{VARIABLE}", print_summary=False)
 
         if SENSITIVITY_ANALYSIS:
             opt_sim = model.optimal_solution(variable=VARIABLE)
