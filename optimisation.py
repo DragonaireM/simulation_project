@@ -438,6 +438,11 @@ class Optimisation:
                     'delta_plus': '+1'
                 }
                 combined_df = pd.concat([pd.DataFrame([variable_change_row]), combined_df], ignore_index=True)
+                combined_df = combined_df[(combined_df['section'] == 'variable_change') | 
+                                          (combined_df['metric'] == 'total_cost') | 
+                                          (combined_df['metric'] == 'avg_waiting_time') |
+                                          (combined_df['metric'] == 'doctor_utilization') |
+                                          (combined_df['metric'] == 'patients_waiting_over_15min')]
                 print(combined_df.iloc[:, 1:])
 
         elif variable == "cost_params":
