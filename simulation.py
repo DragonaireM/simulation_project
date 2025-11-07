@@ -8,6 +8,7 @@ import os
 import tempfile
 from tqdm import tqdm
 from summary import Summary, Statistic, Schedules, WaitingTimes, PatientMetrics, Averages, SystemMetrics
+from scipy.stats import truncnorm
 
 class Simulation:
     def __init__(self,
@@ -589,6 +590,225 @@ class Simulation:
         print(f"{'='*80}\n")
 
         return comparison
+
+    def calculate_theoretical_unpunctuality_mean(self) -> float:
+        """Calculate theoretical mean of truncated normal unpunctuality distribution"""
+        mu = self.iat_distribution.mu
+        sigma = self.iat_distribution.sigma
+        lower = self.iat_distribution.LOWER_BOUND
+        upper = self.iat_distribution.UPPER_BOUND
+
+        a = (lower - mu) / sigma
+        b = (upper - mu) / sigma
+        return truncnorm.mean(a, b, loc=mu, scale=sigma)
+
+    def comprehensive_control_variate_comparison(self, num_runs: int = 1000, base_seed: int | None = None) -> dict[str, Any]:
+        """
+        Comprehensive control variate comparison for waiting time, idle time, overtime, and total cost
+        """
+        if base_seed is None:
+            base_seed = self.seed if self.seed is not None else 42
+
+        print(f"\n{'='*80}")
+        print(f"COMPREHENSIVE CONTROL VARIATE ANALYSIS")
+        print(f"{'='*80}")
+        print(f"Number of runs: {num_runs}")
+        print(f"Control variables:")
+        print(f"  - Service Time (mean = {self.mean_service_time:.4f} minutes)")
+        print(f"  - Unpunctuality (mean = {self.calculate_theoretical_unpunctuality_mean():.4f} minutes)")
+        print(f"  - Total Service Time (mean = {self.number_of_patients * self.mean_service_time:.4f} minutes)")
+
+        # Theoretical means
+        theoretical_mean_service = self.mean_service_time
+        theoretical_mean_unpunctuality = self.calculate_theoretical_unpunctuality_mean()
+        theoretical_mean_total_service = self.number_of_patients * self.mean_service_time
+
+        # Storage for results
+        standard_results = {
+            'waiting': [], 'idle': [], 'overtime': [], 'cost': []
+        }
+        cv_results = {
+            'waiting': [], 'idle': [], 'overtime': [], 'cost': []
+        }
+
+        # Store control variables for coefficient calculation
+        control_vars = {
+            'mean_service': [],
+            'avg_unpunctuality': [],
+            'total_service': []
+        }
+
+        print(f"\nRunning simulations...")
+        for run in tqdm(range(num_runs), desc="Control Variate Analysis"):
+            seed = base_seed + run
+
+            # Run single simulation
+            service_times = self.service_distribution.sample(size=self.number_of_patients, seed=seed)
+            interarrival_deviation = self.iat_distribution.sample(size=self.number_of_patients, seed=seed)
+            arrival_times = [i * self.scheduled_arrival + dev for i, dev in enumerate(interarrival_deviation)]
+
+            schedule = Schedule(self.working_hours)
+            schedule.setup_schedule(arrival_times, service_times, servers=self.doctors, queue_capacity=self.queue_capacity)
+
+            df = schedule.to_dataframe()
+            markov_chain = schedule.to_markov_chain()
+
+            # Extract metrics
+            waiting_times = df['waiting_time'].values
+            idle_time = markov_chain.get_server_idle_time()
+            overtime = markov_chain.get_server_overtime(self.working_hours)
+
+            # Standard metrics (without control variates)
+            mean_waiting = np.mean(waiting_times)
+            standard_results['waiting'].append(mean_waiting)
+            standard_results['idle'].append(idle_time)
+            standard_results['overtime'].append(overtime)
+
+            # Calculate standard cost
+            standard_cost = (
+                idle_time * self.cost_params[0] +
+                mean_waiting * self.number_of_patients * self.cost_params[1] +
+                overtime * self.cost_params[2] +
+                self.doctors * self.working_hours * 60.0 * self.cost_params[3]
+            )
+            standard_results['cost'].append(standard_cost)
+
+            # Store control variables
+            mean_service = np.mean(service_times)
+            avg_unpunctuality = np.mean(interarrival_deviation)
+            total_service = np.sum(service_times)
+
+            control_vars['mean_service'].append(mean_service)
+            control_vars['avg_unpunctuality'].append(avg_unpunctuality)
+            control_vars['total_service'].append(total_service)
+
+        # Calculate optimal coefficients across all runs
+        print("Calculating optimal control variate coefficients...")
+
+        # Waiting time coefficient
+        cov_waiting_service = np.cov(standard_results['waiting'], control_vars['mean_service'])[0, 1]
+        var_service = np.var(control_vars['mean_service'], ddof=1)
+        c_waiting = -cov_waiting_service / var_service if var_service > 0 else 0
+
+        # Idle time coefficient
+        cov_idle_unpunc = np.cov(standard_results['idle'], control_vars['avg_unpunctuality'])[0, 1]
+        var_unpunc = np.var(control_vars['avg_unpunctuality'], ddof=1)
+        c_idle = -cov_idle_unpunc / var_unpunc if var_unpunc > 0 else 0
+
+        # Overtime coefficient
+        cov_overtime_total = np.cov(standard_results['overtime'], control_vars['total_service'])[0, 1]
+        var_total = np.var(control_vars['total_service'], ddof=1)
+        c_overtime = -cov_overtime_total / var_total if var_total > 0 else 0
+
+        print(f"  Optimal coefficients:")
+        print(f"    Waiting time (c*): {c_waiting:.6f}")
+        print(f"    Idle time (c*):    {c_idle:.6f}")
+        print(f"    Overtime (c*):     {c_overtime:.6f}")
+
+        # Apply control variates with optimal coefficients
+        for i in range(num_runs):
+            # 1. Waiting time control
+            cv_mean_waiting = standard_results['waiting'][i] + c_waiting * (
+                control_vars['mean_service'][i] - theoretical_mean_service
+            )
+            cv_results['waiting'].append(cv_mean_waiting)
+
+            # 2. Idle time control
+            cv_idle = standard_results['idle'][i] + c_idle * (
+                control_vars['avg_unpunctuality'][i] - theoretical_mean_unpunctuality
+            )
+            cv_results['idle'].append(cv_idle)
+
+            # 3. Overtime control
+            cv_overtime = standard_results['overtime'][i] + c_overtime * (
+                control_vars['total_service'][i] - theoretical_mean_total_service
+            )
+            cv_results['overtime'].append(cv_overtime)
+
+            # Calculate CV cost
+            cv_cost = (
+                cv_idle * self.cost_params[0] +
+                cv_mean_waiting * self.number_of_patients * self.cost_params[1] +
+                cv_overtime * self.cost_params[2] +
+                self.doctors * self.working_hours * 60.0 * self.cost_params[3]
+            )
+            cv_results['cost'].append(cv_cost)
+
+        # Calculate statistics
+        comparison = {
+            'num_runs': num_runs,
+            'waiting': self._calculate_metric_comparison(standard_results['waiting'], cv_results['waiting'], num_runs),
+            'idle': self._calculate_metric_comparison(standard_results['idle'], cv_results['idle'], num_runs),
+            'overtime': self._calculate_metric_comparison(standard_results['overtime'], cv_results['overtime'], num_runs),
+            'cost': self._calculate_metric_comparison(standard_results['cost'], cv_results['cost'], num_runs)
+        }
+
+        # Store for summary display
+        self.control_variate_info = {
+            'comprehensive': comparison,
+            'theoretical_means': {
+                'service': theoretical_mean_service,
+                'unpunctuality': theoretical_mean_unpunctuality,
+                'total_service': theoretical_mean_total_service
+            }
+        }
+
+        # Print results
+        self._print_cv_comparison_results(comparison)
+
+        return comparison
+
+    def _calculate_metric_comparison(self, standard: list[float], cv: list[float], num_runs: int) -> dict[str, Any]:
+        """Helper to calculate comparison statistics for a metric"""
+        standard_arr = np.array(standard)
+        cv_arr = np.array(cv)
+
+        std_mean = float(np.mean(standard_arr))
+        std_var = float(np.var(standard_arr, ddof=1))
+        std_se = float(np.std(standard_arr, ddof=1) / np.sqrt(num_runs))
+
+        cv_mean = float(np.mean(cv_arr))
+        cv_var = float(np.var(cv_arr, ddof=1))
+        cv_se = float(np.std(cv_arr, ddof=1) / np.sqrt(num_runs))
+
+        var_reduction = ((std_var - cv_var) / std_var * 100) if std_var > 0 else 0
+        efficiency_gain = (std_var / cv_var) if cv_var > 0 else 1
+
+        return {
+            'standard': {'mean': std_mean, 'variance': std_var, 'std_error': std_se},
+            'cv': {'mean': cv_mean, 'variance': cv_var, 'std_error': cv_se},
+            'variance_reduction_percent': float(var_reduction),
+            'efficiency_gain': float(efficiency_gain)
+        }
+
+    def _print_cv_comparison_results(self, comparison: dict[str, Any]) -> None:
+        """Print comprehensive control variate comparison results"""
+        print(f"\n{'='*80}")
+        print("COMPREHENSIVE CONTROL VARIATE RESULTS")
+        print(f"{'='*80}")
+
+        metrics = [
+            ('Waiting Time (minutes)', 'waiting'),
+            ('Idle Time (minutes)', 'idle'),
+            ('Overtime (minutes)', 'overtime'),
+            ('Total Cost ($)', 'cost')
+        ]
+
+        for metric_name, key in metrics:
+            data = comparison[key]
+            print(f"\n{metric_name}:")
+            print(f"  Standard MC:")
+            print(f"    Mean:            {data['standard']['mean']:>12.4f}")
+            print(f"    Variance:        {data['standard']['variance']:>12.4f}")
+            print(f"    Std Error:       {data['standard']['std_error']:>12.4f}")
+            print(f"  With Control Variates:")
+            print(f"    Mean:            {data['cv']['mean']:>12.4f}")
+            print(f"    Variance:        {data['cv']['variance']:>12.4f}")
+            print(f"    Std Error:       {data['cv']['std_error']:>12.4f}")
+            print(f"  Variance Reduction:  {data['variance_reduction_percent']:>10.2f}%")
+            print(f"  Efficiency Gain:     {data['efficiency_gain']:>10.2f}x")
+
+        print(f"\n{'='*80}\n")
 
     def __getitem__(self, key: str) -> Any:
         """

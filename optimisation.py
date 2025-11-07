@@ -277,22 +277,9 @@ class Optimisation:
                 print(f"  Patients waiting > 15 min:    {s['patient_metrics']['patients_waiting_over_15min']:>12}")
                 print(f"  Percentage waiting > 15 min:  {s['patient_metrics']['percentage_waiting_over_15min']:>12.2f}%")
 
-                # Run control variate comparison (this will take some time)
-                print(f"\n  Running control variate comparison with 1000 runs...")
-                comparison = sim.compare_variance_reduction(num_runs=1000, base_seed=sim.seed)
-
-                # Print control variate results
-                print("\n  CONTROL VARIATE COMPARISON:")
-                print(f"    Standard MC:")
-                print(f"      Mean waiting time:          {comparison['standard_mc']['mean_waiting_time']:>12.6f} minutes")
-                print(f"      Variance:                   {comparison['standard_mc']['variance']:>12.6f}")
-                print(f"      Standard error:             {comparison['standard_mc']['std_error']:>12.6f}")
-                print(f"\n    With Control Variates:")
-                print(f"      Mean waiting time:          {comparison['control_variates']['mean_waiting_time']:>12.6f} minutes")
-                print(f"      Variance:                   {comparison['control_variates']['variance']:>12.6f}")
-                print(f"      Standard error:             {comparison['control_variates']['std_error']:>12.6f}")
-                print(f"\n    Variance Reduction:           {comparison['variance_reduction_percent']:>12.2f}%")
-                print(f"    Efficiency Gain:              {comparison['efficiency_gain']:>12.2f}x")
+                # Run comprehensive control variate comparison (this will take some time)
+                print(f"\n  Running comprehensive control variate comparison with 1000 runs...")
+                sim.comprehensive_control_variate_comparison(num_runs=1000, base_seed=sim.seed)
 
         print("\n" + "="*80)
         print("END OF SUMMARY")

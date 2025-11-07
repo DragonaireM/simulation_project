@@ -1,6 +1,3 @@
-Run at 7 Nov, 2:55 p.m. 
-Simulating progress: 100%|██████████████████████████████████████████████████████████████████████████████| 7/7 [00:35<00:00,  5.00s/it]
-
 ================================================================================
 SIMULATION SUMMARY - SAVED RESULTS
 ================================================================================
@@ -23,81 +20,79 @@ PATIENT METRICS (MINUTES):
   Patients waiting > 15 min:        266954.0
   Percentage waiting > 15 min:         88.98%
 
-  Running control variate comparison with 1000 runs...
-Running comparison between Standard MC and Control Variates...
+  Running comprehensive control variate comparison with 1000 runs...
 
 ================================================================================
-STANDARD MONTE CARLO SIMULATION (No Control Variates)
-================================================================================
-Number of runs: 1000
-Standard MC Simulation: 100%|███████████████████████████████████████████████████████████████████| 1000/1000 [00:00<00:00, 1009.97it/s] 
-
-================================================================================
-STANDARD MC SUMMARY
-================================================================================
-Mean waiting time across runs: 71.031672 hours
-Variance of mean waiting times: 322.222027
-Standard error: 17.950544
-================================================================================
-
-
-================================================================================
-CONTROL VARIATES MONTE CARLO SIMULATION
+COMPREHENSIVE CONTROL VARIATE ANALYSIS
 ================================================================================
 Number of runs: 1000
-Control variable: Service Time (Known mean = 15.5000 hours)
-Control Variates Simulation: 100%|███████████████████████████████████████████████████████████████| 1000/1000 [00:01<00:00, 534.32it/s] 
+Control variables:
+  - Service Time (mean = 15.5000 minutes)
+  - Unpunctuality (mean = -7.9213 minutes)
+  - Total Service Time (mean = 465.0000 minutes)
+
+Running simulations...
+Control Variate Analysis: 100%|██████████████████████████████████████████████████████████████████| 1000/1000 [00:01<00:00, 627.50it/s]
+Calculating optimal control variate coefficients...
+  Optimal coefficients:
+    Waiting time (c*): -13.540385
+    Idle time (c*):    -0.568004
+    Overtime (c*):     -0.493402
 
 ================================================================================
-CONTROL VARIATES SUMMARY
-================================================================================
-Average optimal coefficient (c*): 3.441893
-Average W-S correlation: -0.441759
-Average within-run variance reduction: -66.27%
-Runs with negative correlation (good for CV): 993/1000
-
-Overall Statistics Across Runs:
-  Original MC - Mean: 71.031672, Var: 322.222027
-  Control Variates - Mean: 71.043144, Var: 248.933783
-  Between-run variance reduction: 22.74%
+COMPREHENSIVE CONTROL VARIATE RESULTS
 ================================================================================
 
+Waiting Time (minutes):
+  Standard MC:
+    Mean:                 71.0317
+    Variance:            322.2220
+    Std Error:             0.5676
+  With Control Variates:
+    Mean:                 70.8583
+    Variance:            160.0224
+    Std Error:             0.4000
+  Variance Reduction:       50.34%
+  Efficiency Gain:           2.01x
+
+Idle Time (minutes):
+  Standard MC:
+    Mean:                  9.4603
+    Variance:             71.1707
+    Std Error:             0.2668
+  With Control Variates:
+    Mean:                 12.0071
+    Variance:             68.2984
+    Std Error:             0.2613
+  Variance Reduction:        4.04%
+  Efficiency Gain:           1.04x
+
+Overtime (minutes):
+  Standard MC:
+    Mean:                 10.2439
+    Variance:            295.1145
+    Std Error:             0.5432
+  With Control Variates:
+    Mean:                 10.0544
+    Variance:            101.2794
+    Std Error:             0.3182
+  Variance Reduction:       65.68%
+  Efficiency Gain:           2.91x
+
+Total Cost ($):
+  Standard MC:
+    Mean:                451.0163
+    Variance:          17639.3392
+    Std Error:             4.1999
+  With Control Variates:
+    Mean:                452.2386
+    Variance:           7820.0578
+    Std Error:             2.7964
+  Variance Reduction:       55.67%
+  Efficiency Gain:           2.26x
 
 ================================================================================
-VARIANCE REDUCTION COMPARISON
-================================================================================
-Number of runs: 1000
-Base seed: 0
 
-Standard Monte Carlo:
-  Mean waiting time: 71.031672 hours
-  Variance: 322.222027
-  Standard error: 0.567646
-
-Control Variates:
-  Mean waiting time: 71.043144 hours
-  Variance: 248.933783
-  Standard error: 0.498933
-
-Variance Reduction: 22.74%
-Efficiency Gain: 1.29x
-  (Control variates is equivalent to 1.29x more standard MC runs)
-================================================================================
-
-
-  CONTROL VARIATE COMPARISON:
-    Standard MC:
-      Mean waiting time:             71.031672 minutes
-      Variance:                     322.222027
-      Standard error:                 0.567646
-
-    With Control Variates:
-      Mean waiting time:             71.043144 minutes
-      Variance:                     248.933783
-      Standard error:                 0.498933
-
-    Variance Reduction:                  22.74%
-    Efficiency Gain:                      1.29x
 
 --------------------------------------------------------------------------------
 Variable: scheduled_arrival | Configuration: 13/15.5/1
@@ -117,81 +112,79 @@ PATIENT METRICS (MINUTES):
   Patients waiting > 15 min:        259830.0
   Percentage waiting > 15 min:         86.61%
 
-  Running control variate comparison with 1000 runs...
-Running comparison between Standard MC and Control Variates...
+  Running comprehensive control variate comparison with 1000 runs...
 
 ================================================================================
-STANDARD MONTE CARLO SIMULATION (No Control Variates)
-================================================================================
-Number of runs: 1000
-Standard MC Simulation: 100%|███████████████████████████████████████████████████████████████████| 1000/1000 [00:00<00:00, 1022.85it/s] 
-
-================================================================================
-STANDARD MC SUMMARY
-================================================================================
-Mean waiting time across runs: 59.058320 hours
-Variance of mean waiting times: 298.498355
-Standard error: 17.277105
-================================================================================
-
-
-================================================================================
-CONTROL VARIATES MONTE CARLO SIMULATION
+COMPREHENSIVE CONTROL VARIATE ANALYSIS
 ================================================================================
 Number of runs: 1000
-Control variable: Service Time (Known mean = 15.5000 hours)
-Control Variates Simulation: 100%|███████████████████████████████████████████████████████████████| 1000/1000 [00:01<00:00, 530.03it/s] 
+Control variables:
+  - Service Time (mean = 15.5000 minutes)
+  - Unpunctuality (mean = -7.9213 minutes)
+  - Total Service Time (mean = 465.0000 minutes)
+
+Running simulations...
+Control Variate Analysis: 100%|██████████████████████████████████████████████████████████████████| 1000/1000 [00:01<00:00, 676.13it/s] 
+Calculating optimal control variate coefficients...
+  Optimal coefficients:
+    Waiting time (c*): -13.039916
+    Idle time (c*):    -0.221590
+    Overtime (c*):     -0.529316
 
 ================================================================================
-CONTROL VARIATES SUMMARY
-================================================================================
-Average optimal coefficient (c*): 3.390432
-Average W-S correlation: -0.531131
-Average within-run variance reduction: -93.07%
-Runs with negative correlation (good for CV): 997/1000
-
-Overall Statistics Across Runs:
-  Original MC - Mean: 59.058320, Var: 298.498355
-  Control Variates - Mean: 59.042000, Var: 229.090615
-  Between-run variance reduction: 23.25%
+COMPREHENSIVE CONTROL VARIATE RESULTS
 ================================================================================
 
+Waiting Time (minutes):
+  Standard MC:
+    Mean:                 59.0583
+    Variance:            298.4984
+    Std Error:             0.5464
+  With Control Variates:
+    Mean:                 58.8914
+    Variance:            148.0673
+    Std Error:             0.3848
+  Variance Reduction:       50.40%
+  Efficiency Gain:           2.02x
+
+Idle Time (minutes):
+  Standard MC:
+    Mean:                 12.8127
+    Variance:             79.5919
+    Std Error:             0.2821
+  With Control Variates:
+    Mean:                 13.8062
+    Variance:             79.1548
+    Std Error:             0.2813
+  Variance Reduction:        0.55%
+  Efficiency Gain:           1.01x
+
+Overtime (minutes):
+  Standard MC:
+    Mean:                 11.4496
+    Variance:            325.0872
+    Std Error:             0.5702
+  With Control Variates:
+    Mean:                 11.2463
+    Variance:            102.0076
+    Std Error:             0.3194
+  Variance Reduction:       68.62%
+  Efficiency Gain:           3.19x
+
+Total Cost ($):
+  Standard MC:
+    Mean:                384.3370
+    Variance:          16703.0605
+    Std Error:             4.0869
+  With Control Variates:
+    Mean:                384.0239
+    Variance:           7327.3431
+    Std Error:             2.7069
+  Variance Reduction:       56.13%
+  Efficiency Gain:           2.28x
 
 ================================================================================
-VARIANCE REDUCTION COMPARISON
-================================================================================
-Number of runs: 1000
-Base seed: 0
 
-Standard Monte Carlo:
-  Mean waiting time: 59.058320 hours
-  Variance: 298.498355
-  Standard error: 0.546350
-
-Control Variates:
-  Mean waiting time: 59.042000 hours
-  Variance: 229.090615
-  Standard error: 0.478634
-
-Variance Reduction: 23.25%
-Efficiency Gain: 1.30x
-  (Control variates is equivalent to 1.30x more standard MC runs)
-================================================================================
-
-
-  CONTROL VARIATE COMPARISON:
-    Standard MC:
-      Mean waiting time:             59.058320 minutes
-      Variance:                     298.498355
-      Standard error:                 0.546350
-
-    With Control Variates:
-      Mean waiting time:             59.042000 minutes
-      Variance:                     229.090615
-      Standard error:                 0.478634
-
-    Variance Reduction:                  23.25%
-    Efficiency Gain:                      1.30x
 
 --------------------------------------------------------------------------------
 Variable: scheduled_arrival | Configuration: 14/15.5/1
@@ -211,81 +204,79 @@ PATIENT METRICS (MINUTES):
   Patients waiting > 15 min:        248951.0
   Percentage waiting > 15 min:         82.98%
 
-  Running control variate comparison with 1000 runs...
-Running comparison between Standard MC and Control Variates...
+  Running comprehensive control variate comparison with 1000 runs...
 
 ================================================================================
-STANDARD MONTE CARLO SIMULATION (No Control Variates)
-================================================================================
-Number of runs: 1000
-Standard MC Simulation: 100%|███████████████████████████████████████████████████████████████████| 1000/1000 [00:00<00:00, 1067.90it/s] 
-
-================================================================================
-STANDARD MC SUMMARY
-================================================================================
-Mean waiting time across runs: 48.375510 hours
-Variance of mean waiting times: 252.131643
-Standard error: 15.878654
-================================================================================
-
-
-================================================================================
-CONTROL VARIATES MONTE CARLO SIMULATION
+COMPREHENSIVE CONTROL VARIATE ANALYSIS
 ================================================================================
 Number of runs: 1000
-Control variable: Service Time (Known mean = 15.5000 hours)
-Control Variates Simulation: 100%|███████████████████████████████████████████████████████████████| 1000/1000 [00:01<00:00, 522.94it/s] 
+Control variables:
+  - Service Time (mean = 15.5000 minutes)
+  - Unpunctuality (mean = -7.9213 minutes)
+  - Total Service Time (mean = 465.0000 minutes)
+
+Running simulations...
+Control Variate Analysis: 100%|██████████████████████████████████████████████████████████████████| 1000/1000 [00:01<00:00, 869.81it/s] 
+Calculating optimal control variate coefficients...
+  Optimal coefficients:
+    Waiting time (c*): -12.013741
+    Idle time (c*):    0.586518
+    Overtime (c*):     -0.576662
 
 ================================================================================
-CONTROL VARIATES SUMMARY
-================================================================================
-Average optimal coefficient (c*): 3.286178
-Average W-S correlation: -0.615925
-Average within-run variance reduction: -123.06%
-Runs with negative correlation (good for CV): 999/1000
-
-Overall Statistics Across Runs:
-  Original MC - Mean: 48.375510, Var: 252.131643
-  Control Variates - Mean: 48.306736, Var: 190.937275
-  Between-run variance reduction: 24.27%
+COMPREHENSIVE CONTROL VARIATE RESULTS
 ================================================================================
 
+Waiting Time (minutes):
+  Standard MC:
+    Mean:                 48.3755
+    Variance:            252.1316
+    Std Error:             0.5021
+  With Control Variates:
+    Mean:                 48.2217
+    Variance:            124.4453
+    Std Error:             0.3528
+  Variance Reduction:       50.64%
+  Efficiency Gain:           2.03x
+
+Idle Time (minutes):
+  Standard MC:
+    Mean:                 18.6386
+    Variance:             99.3890
+    Std Error:             0.3153
+  With Control Variates:
+    Mean:                 16.0089
+    Variance:             96.3265
+    Std Error:             0.3104
+  Variance Reduction:        3.08%
+  Efficiency Gain:           1.03x
+
+Overtime (minutes):
+  Standard MC:
+    Mean:                 13.4464
+    Variance:            368.1234
+    Std Error:             0.6067
+  With Control Variates:
+    Mean:                 13.2249
+    Variance:            103.3508
+    Std Error:             0.3215
+  Variance Reduction:       71.92%
+  Efficiency Gain:           3.56x
+
+Total Cost ($):
+  Standard MC:
+    Mean:                329.0613
+    Variance:          14504.8807
+    Std Error:             3.8085
+  With Control Variates:
+    Mean:                325.1765
+    Variance:           6259.7150
+    Std Error:             2.5019
+  Variance Reduction:       56.84%
+  Efficiency Gain:           2.32x
 
 ================================================================================
-VARIANCE REDUCTION COMPARISON
-================================================================================
-Number of runs: 1000
-Base seed: 0
 
-Standard Monte Carlo:
-  Mean waiting time: 48.375510 hours
-  Variance: 252.131643
-  Standard error: 0.502127
-
-Control Variates:
-  Mean waiting time: 48.306736 hours
-  Variance: 190.937275
-  Standard error: 0.436964
-
-Variance Reduction: 24.27%
-Efficiency Gain: 1.32x
-  (Control variates is equivalent to 1.32x more standard MC runs)
-================================================================================
-
-
-  CONTROL VARIATE COMPARISON:
-    Standard MC:
-      Mean waiting time:             48.375510 minutes
-      Variance:                     252.131643
-      Standard error:                 0.502127
-
-    With Control Variates:
-      Mean waiting time:             48.306736 minutes
-      Variance:                     190.937275
-      Standard error:                 0.436964
-
-    Variance Reduction:                  24.27%
-    Efficiency Gain:                      1.32x
 
 --------------------------------------------------------------------------------
 Variable: scheduled_arrival | Configuration: 15/15.5/1
@@ -305,81 +296,79 @@ PATIENT METRICS (MINUTES):
   Patients waiting > 15 min:        233362.0
   Percentage waiting > 15 min:         77.79%
 
-  Running control variate comparison with 1000 runs...
-Running comparison between Standard MC and Control Variates...
+  Running comprehensive control variate comparison with 1000 runs...
 
 ================================================================================
-STANDARD MONTE CARLO SIMULATION (No Control Variates)
-================================================================================
-Number of runs: 1000
-Standard MC Simulation: 100%|████████████████████████████████████████████████████████████████████| 1000/1000 [00:01<00:00, 970.98it/s] 
-
-================================================================================
-STANDARD MC SUMMARY
-================================================================================
-Mean waiting time across runs: 39.420733 hours
-Variance of mean waiting times: 188.038680
-Standard error: 13.712720
-================================================================================
-
-
-================================================================================
-CONTROL VARIATES MONTE CARLO SIMULATION
+COMPREHENSIVE CONTROL VARIATE ANALYSIS
 ================================================================================
 Number of runs: 1000
-Control variable: Service Time (Known mean = 15.5000 hours)
-Control Variates Simulation: 100%|███████████████████████████████████████████████████████████████| 1000/1000 [00:01<00:00, 533.56it/s] 
+Control variables:
+  - Service Time (mean = 15.5000 minutes)
+  - Unpunctuality (mean = -7.9213 minutes)
+  - Total Service Time (mean = 465.0000 minutes)
+
+Running simulations...
+Control Variate Analysis: 100%|██████████████████████████████████████████████████████████████████| 1000/1000 [00:01<00:00, 751.24it/s] 
+Calculating optimal control variate coefficients...
+  Optimal coefficients:
+    Waiting time (c*): -10.346425
+    Idle time (c*):    2.037852
+    Overtime (c*):     -0.618066
 
 ================================================================================
-CONTROL VARIATES SUMMARY
-================================================================================
-Average optimal coefficient (c*): 3.114833
-Average W-S correlation: -0.667736
-Average within-run variance reduction: -142.60%
-Runs with negative correlation (good for CV): 999/1000
-
-Overall Statistics Across Runs:
-  Original MC - Mean: 39.420733, Var: 188.038680
-  Control Variates - Mean: 39.278790, Var: 139.487282
-  Between-run variance reduction: 25.82%
+COMPREHENSIVE CONTROL VARIATE RESULTS
 ================================================================================
 
+Waiting Time (minutes):
+  Standard MC:
+    Mean:                 39.4207
+    Variance:            188.0387
+    Std Error:             0.4336
+  With Control Variates:
+    Mean:                 39.2883
+    Variance:             93.3346
+    Std Error:             0.3055
+  Variance Reduction:       50.36%
+  Efficiency Gain:           2.01x
+
+Idle Time (minutes):
+  Standard MC:
+    Mean:                 28.5414
+    Variance:            160.4733
+    Std Error:             0.4006
+  With Control Variates:
+    Mean:                 19.4045
+    Variance:            123.5021
+    Std Error:             0.3514
+  Variance Reduction:       23.04%
+  Efficiency Gain:           1.30x
+
+Overtime (minutes):
+  Standard MC:
+    Mean:                 18.0661
+    Variance:            412.2353
+    Std Error:             0.6421
+  With Control Variates:
+    Mean:                 17.8287
+    Variance:            108.0766
+    Std Error:             0.3288
+  Variance Reduction:       73.78%
+  Efficiency Gain:           3.81x
+
+Total Cost ($):
+  Standard MC:
+    Mean:                292.1650
+    Variance:          10943.1920
+    Std Error:             3.3080
+  With Control Variates:
+    Mean:                281.8772
+    Variance:           4687.7866
+    Std Error:             2.1651
+  Variance Reduction:       57.16%
+  Efficiency Gain:           2.33x
 
 ================================================================================
-VARIANCE REDUCTION COMPARISON
-================================================================================
-Number of runs: 1000
-Base seed: 0
 
-Standard Monte Carlo:
-  Mean waiting time: 39.420733 hours
-  Variance: 188.038680
-  Standard error: 0.433634
-
-Control Variates:
-  Mean waiting time: 39.278790 hours
-  Variance: 139.487282
-  Standard error: 0.373480
-
-Variance Reduction: 25.82%
-Efficiency Gain: 1.35x
-  (Control variates is equivalent to 1.35x more standard MC runs)
-================================================================================
-
-
-  CONTROL VARIATE COMPARISON:
-    Standard MC:
-      Mean waiting time:             39.420733 minutes
-      Variance:                     188.038680
-      Standard error:                 0.433634
-
-    With Control Variates:
-      Mean waiting time:             39.278790 minutes
-      Variance:                     139.487282
-      Standard error:                 0.373480
-
-    Variance Reduction:                  25.82%
-    Efficiency Gain:                      1.35x
 
 --------------------------------------------------------------------------------
 Variable: scheduled_arrival | Configuration: 16/15.5/1
@@ -399,81 +388,79 @@ PATIENT METRICS (MINUTES):
   Patients waiting > 15 min:        213767.0
   Percentage waiting > 15 min:         71.26%
 
-  Running control variate comparison with 1000 runs...
-Running comparison between Standard MC and Control Variates...
+  Running comprehensive control variate comparison with 1000 runs...
 
 ================================================================================
-STANDARD MONTE CARLO SIMULATION (No Control Variates)
-================================================================================
-Number of runs: 1000
-Standard MC Simulation: 100%|███████████████████████████████████████████████████████████████████| 1000/1000 [00:00<00:00, 1011.19it/s] 
-
-================================================================================
-STANDARD MC SUMMARY
-================================================================================
-Mean waiting time across runs: 32.139280 hours
-Variance of mean waiting times: 126.294219
-Standard error: 11.238070
-================================================================================
-
-
-================================================================================
-CONTROL VARIATES MONTE CARLO SIMULATION
+COMPREHENSIVE CONTROL VARIATE ANALYSIS
 ================================================================================
 Number of runs: 1000
-Control variable: Service Time (Known mean = 15.5000 hours)
-Control Variates Simulation: 100%|███████████████████████████████████████████████████████████████| 1000/1000 [00:01<00:00, 506.55it/s] 
+Control variables:
+  - Service Time (mean = 15.5000 minutes)
+  - Unpunctuality (mean = -7.9213 minutes)
+  - Total Service Time (mean = 465.0000 minutes)
+
+Running simulations...
+Control Variate Analysis: 100%|██████████████████████████████████████████████████████████████████| 1000/1000 [00:01<00:00, 783.93it/s]
+Calculating optimal control variate coefficients...
+  Optimal coefficients:
+    Waiting time (c*): -8.428158
+    Idle time (c*):    3.701303
+    Overtime (c*):     -0.583499
 
 ================================================================================
-CONTROL VARIATES SUMMARY
-================================================================================
-Average optimal coefficient (c*): 2.887460
-Average W-S correlation: -0.677512
-Average within-run variance reduction: -145.51%
-Runs with negative correlation (good for CV): 1000/1000
-
-Overall Statistics Across Runs:
-  Original MC - Mean: 32.139280, Var: 126.294219
-  Control Variates - Mean: 31.936012, Var: 91.052792
-  Between-run variance reduction: 27.90%
+COMPREHENSIVE CONTROL VARIATE RESULTS
 ================================================================================
 
+Waiting Time (minutes):
+  Standard MC:
+    Mean:                 32.1393
+    Variance:            126.2942
+    Std Error:             0.3554
+  With Control Variates:
+    Mean:                 32.0314
+    Variance:             63.4517
+    Std Error:             0.2519
+  Variance Reduction:       49.76%
+  Efficiency Gain:           1.99x
+
+Idle Time (minutes):
+  Standard MC:
+    Mean:                 43.0255
+    Variance:            292.2695
+    Std Error:             0.5406
+  With Control Variates:
+    Mean:                 26.4303
+    Variance:            170.3068
+    Std Error:             0.4127
+  Variance Reduction:       41.73%
+  Efficiency Gain:           1.72x
+
+Overtime (minutes):
+  Standard MC:
+    Mean:                 29.1829
+    Variance:            429.7245
+    Std Error:             0.6555
+  With Control Variates:
+    Mean:                 28.9588
+    Variance:            158.6361
+    Std Error:             0.3983
+  Variance Reduction:       63.08%
+  Efficiency Gain:           2.71x
+
+Total Cost ($):
+  Standard MC:
+    Mean:                279.6355
+    Variance:           7147.8728
+    Std Error:             2.6736
+  With Control Variates:
+    Mean:                262.0568
+    Variance:           3281.6541
+    Std Error:             1.8115
+  Variance Reduction:       54.09%
+  Efficiency Gain:           2.18x
 
 ================================================================================
-VARIANCE REDUCTION COMPARISON
-================================================================================
-Number of runs: 1000
-Base seed: 0
 
-Standard Monte Carlo:
-  Mean waiting time: 32.139280 hours
-  Variance: 126.294219
-  Standard error: 0.355379
-
-Control Variates:
-  Mean waiting time: 31.936012 hours
-  Variance: 91.052792
-  Standard error: 0.301750
-
-Variance Reduction: 27.90%
-Efficiency Gain: 1.39x
-  (Control variates is equivalent to 1.39x more standard MC runs)
-================================================================================
-
-
-  CONTROL VARIATE COMPARISON:
-    Standard MC:
-      Mean waiting time:             32.139280 minutes
-      Variance:                     126.294219
-      Standard error:                 0.355379
-
-    With Control Variates:
-      Mean waiting time:             31.936012 minutes
-      Variance:                      91.052792
-      Standard error:                 0.301750
-
-    Variance Reduction:                  27.90%
-    Efficiency Gain:                      1.39x
 
 --------------------------------------------------------------------------------
 Variable: scheduled_arrival | Configuration: 17/15.5/1
@@ -493,81 +480,79 @@ PATIENT METRICS (MINUTES):
   Patients waiting > 15 min:        192282.0
   Percentage waiting > 15 min:         64.09%
 
-  Running control variate comparison with 1000 runs...
-Running comparison between Standard MC and Control Variates...
+  Running comprehensive control variate comparison with 1000 runs...
 
 ================================================================================
-STANDARD MONTE CARLO SIMULATION (No Control Variates)
-================================================================================
-Number of runs: 1000
-Standard MC Simulation: 100%|███████████████████████████████████████████████████████████████████| 1000/1000 [00:00<00:00, 1032.19it/s] 
-
-================================================================================
-STANDARD MC SUMMARY
-================================================================================
-Mean waiting time across runs: 26.659757 hours
-Variance of mean waiting times: 81.381024
-Standard error: 9.021143
-================================================================================
-
-
-================================================================================
-CONTROL VARIATES MONTE CARLO SIMULATION
+COMPREHENSIVE CONTROL VARIATE ANALYSIS
 ================================================================================
 Number of runs: 1000
-Control variable: Service Time (Known mean = 15.5000 hours)
-Control Variates Simulation: 100%|███████████████████████████████████████████████████████████████| 1000/1000 [00:02<00:00, 488.80it/s] 
+Control variables:
+  - Service Time (mean = 15.5000 minutes)
+  - Unpunctuality (mean = -7.9213 minutes)
+  - Total Service Time (mean = 465.0000 minutes)
+
+Running simulations...
+Control Variate Analysis: 100%|██████████████████████████████████████████████████████████████████| 1000/1000 [00:01<00:00, 797.21it/s] 
+Calculating optimal control variate coefficients...
+  Optimal coefficients:
+    Waiting time (c*): -6.710350
+    Idle time (c*):    5.104981
+    Overtime (c*):     -0.468521
 
 ================================================================================
-CONTROL VARIATES SUMMARY
-================================================================================
-Average optimal coefficient (c*): 2.639033
-Average W-S correlation: -0.658880
-Average within-run variance reduction: -137.12%
-Runs with negative correlation (good for CV): 1000/1000
-
-Overall Statistics Across Runs:
-  Original MC - Mean: 26.659757, Var: 81.381024
-  Control Variates - Mean: 26.429589, Var: 56.815310
-  Between-run variance reduction: 30.19%
+COMPREHENSIVE CONTROL VARIATE RESULTS
 ================================================================================
 
+Waiting Time (minutes):
+  Standard MC:
+    Mean:                 26.6598
+    Variance:             81.3810
+    Std Error:             0.2853
+  With Control Variates:
+    Mean:                 26.5738
+    Variance:             41.5448
+    Std Error:             0.2038
+  Variance Reduction:       48.95%
+  Efficiency Gain:           1.96x
+
+Idle Time (minutes):
+  Standard MC:
+    Mean:                 62.5507
+    Variance:            449.2084
+    Std Error:             0.6702
+  With Control Variates:
+    Mean:                 39.6620
+    Variance:            217.1987
+    Std Error:             0.4660
+  Variance Reduction:       51.65%
+  Efficiency Gain:           2.07x
+
+Overtime (minutes):
+  Standard MC:
+    Mean:                 47.9464
+    Variance:            398.8200
+    Std Error:             0.6315
+  With Control Variates:
+    Mean:                 47.7664
+    Variance:            224.0409
+    Std Error:             0.4733
+  Variance Reduction:       43.82%
+  Efficiency Gain:           1.78x
+
+Total Cost ($):
+  Standard MC:
+    Mean:                294.4288
+    Variance:           4390.2150
+    Std Error:             2.0953
+  With Control Variates:
+    Mean:                270.7547
+    Variance:           2460.3477
+    Std Error:             1.5685
+  Variance Reduction:       43.96%
+  Efficiency Gain:           1.78x
 
 ================================================================================
-VARIANCE REDUCTION COMPARISON
-================================================================================
-Number of runs: 1000
-Base seed: 0
 
-Standard Monte Carlo:
-  Mean waiting time: 26.659757 hours
-  Variance: 81.381024
-  Standard error: 0.285274
-
-Control Variates:
-  Mean waiting time: 26.429589 hours
-  Variance: 56.815310
-  Standard error: 0.238360
-
-Variance Reduction: 30.19%
-Efficiency Gain: 1.43x
-  (Control variates is equivalent to 1.43x more standard MC runs)
-================================================================================
-
-
-  CONTROL VARIATE COMPARISON:
-    Standard MC:
-      Mean waiting time:             26.659757 minutes
-      Variance:                      81.381024
-      Standard error:                 0.285274
-
-    With Control Variates:
-      Mean waiting time:             26.429589 minutes
-      Variance:                      56.815310
-      Standard error:                 0.238360
-
-    Variance Reduction:                  30.19%
-    Efficiency Gain:                      1.43x
 
 --------------------------------------------------------------------------------
 Variable: scheduled_arrival | Configuration: 18/15.5/1
@@ -587,86 +572,83 @@ PATIENT METRICS (MINUTES):
   Patients waiting > 15 min:        172104.0
   Percentage waiting > 15 min:         57.37%
 
-  Running control variate comparison with 1000 runs...
-Running comparison between Standard MC and Control Variates...
+  Running comprehensive control variate comparison with 1000 runs...
 
 ================================================================================
-STANDARD MONTE CARLO SIMULATION (No Control Variates)
-================================================================================
-Number of runs: 1000
-Standard MC Simulation: 100%|███████████████████████████████████████████████████████████████████| 1000/1000 [00:00<00:00, 1037.94it/s] 
-
-================================================================================
-STANDARD MC SUMMARY
-================================================================================
-Mean waiting time across runs: 22.599057 hours
-Variance of mean waiting times: 54.474277
-Standard error: 7.380669
-================================================================================
-
-
-================================================================================
-CONTROL VARIATES MONTE CARLO SIMULATION
+COMPREHENSIVE CONTROL VARIATE ANALYSIS
 ================================================================================
 Number of runs: 1000
-Control variable: Service Time (Known mean = 15.5000 hours)
-Control Variates Simulation: 100%|███████████████████████████████████████████████████████████████| 1000/1000 [00:01<00:00, 573.37it/s] 
+Control variables:
+  - Service Time (mean = 15.5000 minutes)
+  - Unpunctuality (mean = -7.9213 minutes)
+  - Total Service Time (mean = 465.0000 minutes)
+
+Running simulations...
+Control Variate Analysis: 100%|██████████████████████████████████████████████████████████████████| 1000/1000 [00:01<00:00, 905.03it/s] 
+Calculating optimal control variate coefficients...
+  Optimal coefficients:
+    Waiting time (c*): -5.374096
+    Idle time (c*):    6.015520
+    Overtime (c*):     -0.368710
 
 ================================================================================
-CONTROL VARIATES SUMMARY
-================================================================================
-Average optimal coefficient (c*): 2.404691
-Average W-S correlation: -0.631042
-Average within-run variance reduction: -125.79%
-Runs with negative correlation (good for CV): 1000/1000
-
-Overall Statistics Across Runs:
-  Original MC - Mean: 22.599057, Var: 54.474277
-  Control Variates - Mean: 22.366224, Var: 37.372434
-  Between-run variance reduction: 31.39%
+COMPREHENSIVE CONTROL VARIATE RESULTS
 ================================================================================
 
+Waiting Time (minutes):
+  Standard MC:
+    Mean:                 22.5991
+    Variance:             54.4743
+    Std Error:             0.2334
+  With Control Variates:
+    Mean:                 22.5303
+    Variance:             28.9238
+    Std Error:             0.1701
+  Variance Reduction:       46.90%
+  Efficiency Gain:           1.88x
+
+Idle Time (minutes):
+  Standard MC:
+    Mean:                 85.4804
+    Variance:            579.1476
+    Std Error:             0.7610
+  With Control Variates:
+    Mean:                 58.5092
+    Variance:            256.9930
+    Std Error:             0.5069
+  Variance Reduction:       55.63%
+  Efficiency Gain:           2.25x
+
+Overtime (minutes):
+  Standard MC:
+    Mean:                 70.8645
+    Variance:            370.0773
+    Std Error:             0.6083
+  With Control Variates:
+    Mean:                 70.7229
+    Variance:            261.8342
+    Std Error:             0.5117
+  Variance Reduction:       29.25%
+  Efficiency Gain:           1.41x
+
+Total Cost ($):
+  Standard MC:
+    Mean:                327.3714
+    Variance:           3060.5933
+    Std Error:             1.7495
+  With Control Variates:
+    Mean:                299.7750
+    Variance:           2156.3551
+    Std Error:             1.4685
+  Variance Reduction:       29.54%
+  Efficiency Gain:           1.42x
 
 ================================================================================
-VARIANCE REDUCTION COMPARISON
-================================================================================
-Number of runs: 1000
-Base seed: 0
 
-Standard Monte Carlo:
-  Mean waiting time: 22.599057 hours
-  Variance: 54.474277
-  Standard error: 0.233397
-
-Control Variates:
-  Mean waiting time: 22.366224 hours
-  Variance: 37.372434
-  Standard error: 0.193320
-
-Variance Reduction: 31.39%
-Efficiency Gain: 1.46x
-  (Control variates is equivalent to 1.46x more standard MC runs)
-================================================================================
-
-
-  CONTROL VARIATE COMPARISON:
-    Standard MC:
-      Mean waiting time:             22.599057 minutes
-      Variance:                      54.474277
-      Standard error:                 0.233397
-
-    With Control Variates:
-      Mean waiting time:             22.366224 minutes
-      Variance:                      37.372434
-      Standard error:                 0.193320
-
-    Variance Reduction:                  31.39%
-    Efficiency Gain:                      1.46x
 
 ================================================================================
 END OF SUMMARY
 ================================================================================
-
 
 ================================================================================
                SENSITIVITY ANALYSIS SUMMARY FOR SCHEDULED_ARRIVAL
