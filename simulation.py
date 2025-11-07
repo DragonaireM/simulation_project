@@ -43,7 +43,7 @@ class Simulation:
         service_times = self.service_distribution.sample(size=self.number_of_patients, seed=seed)
         interarrival_deviation = self.iat_distribution.sample(size=self.number_of_patients, seed=seed)
         arrival_times = [i * self.scheduled_arrival + dev for i, dev in enumerate(interarrival_deviation)]
-        
+
         schedule = Schedule(self.working_hours)
         schedule.setup_schedule(
             arrival_times,
@@ -95,8 +95,8 @@ class Simulation:
         patient_metrics.add_stats(Statistic("Avg Waiting Time", np.mean(waiting_times)))
         patient_metrics.add_stats(Statistic("Max Waiting Time", np.max(waiting_times)))
         patient_metrics.add_stats(Statistic("Std Waiting Time", np.std(waiting_times)))
-        patient_metrics.add_stats(Statistic("Patients Waiting Over 15 Min", np.sum(np.array(waiting_times) > 15) or 0))
-        patient_metrics.add_stats(Statistic("Percentage Waiting Over 15 Min", np.mean(np.array(waiting_times) > 15) * 100))
+        patient_metrics.add_stats(Statistic("Patients Waiting Over 15Min", np.sum(np.array(waiting_times) > 15) or 0))
+        patient_metrics.add_stats(Statistic("Percentage Waiting Over 15Min", np.mean(np.array(waiting_times) > 15) * 100))
         patient_metrics.add_stats(Statistic("Waiting Time 95th Percentile", np.percentile(waiting_times, 95)))
 
         summary.add_section(patient_metrics)
