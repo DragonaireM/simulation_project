@@ -49,8 +49,8 @@ class Schedule:
         This avoids sorting all end times each iteration.
         """
         # save the variables (for potential future use)
-        arrival_times[0] = max(0.0, arrival_times[0])  # ensure first arrival is non-negative
-        self.arrival_times = arrival_times
+        # Ensure all arrival_times are positive
+        self.arrival_times = [max(0.0, t) for t in arrival_times]
         self.service_times = service_times
         self.servers = servers
         self.queue_capacity = queue_capacity
