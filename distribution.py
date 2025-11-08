@@ -76,49 +76,6 @@ class Lognormal:
             and math.isclose(self.sigma, other.sigma, rel_tol=1e-9, abs_tol=1e-12)
         )
 
-class Triangular:
-    """
-    Represents a triangular distribution with given lower, upper, and mode parameters.
-    """
-    def __init__(self, lower: float=0.0, upper: float=1.0, mode: float=0.5):
-        if not (lower <= mode <= upper):
-            raise ValueError("Parameters must satisfy lower <= mode <= upper.")
-        self.lower = lower
-        self.upper = upper
-        self.mode = mode
-
-    def pdf(self, x: float) -> float:
-        if x < self.lower or x > self.upper:
-            return 0
-        if x == self.mode:
-            return 2 / (self.upper - self.lower)
-        elif x < self.mode:
-            return 2 * (x - self.lower) / ((self.upper - self.lower) * (self.mode - self.lower))
-        else:
-            return 2 * (self.upper - x) / ((self.upper - self.lower) * (self.upper - self.mode))
-
-    def cdf(self, x: float) -> float:
-        if x < self.lower:
-            return 0
-        elif x == self.mode:
-            return (self.mode - self.lower) / (self.upper - self.lower)
-        elif x < self.mode:
-            return ((x - self.lower) ** 2) / ((self.upper - self.lower) * (self.mode - self.lower))
-        elif x < self.upper:
-            return 1 - ((self.upper - x) ** 2) / ((self.upper - self.lower) * (self.upper - self.mode))
-        else:
-            return 1
-
-    def mean(self) -> float:
-        return (self.lower + self.upper + self.mode) / 3
-
-    def variance(self) -> float:
-        return (self.lower**2 + self.upper**2 + self.mode**2 - (self.lower * self.upper) - (self.lower * self.mode) - (self.upper * self.mode)) / 18
-
-    def sample(self, size: int=1, seed: int | None=None) -> list[float]:
-        rng = np.random.default_rng(seed)
-        return rng.triangular(left=self.lower, mode=self.mode, right=self.upper, size=size).tolist()
-
 class TruncatedNormal:
     """
     Represents a truncated normal distribution for patient unpunctuality.
