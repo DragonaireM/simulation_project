@@ -1,7 +1,7 @@
 # simulation_project
 
 Brief: simulation code and optimisation tools for clinic scheduling experiments (queueing + variance reduction + simple visualisation).  
-This README explains how to set up a reproducible environment, run the code, change parameters, save results, inspect SQLite outputs and use the visualisations.
+This README explains how to set up a reproducible environment, run the code, change parameters, save results and use the visualisations.
 
 ---
 
@@ -10,7 +10,7 @@ This README explains how to set up a reproducible environment, run the code, cha
 - `simulation.py` — Simulation class + CV experiments, DB export helpers.  
 - `optimisation.py` — Optimisation wrapper (runs `Simulation` over parameter ranges).  
 - `schedule.py` / `markov.py` — schedule construction and Markov-chain helpers.  
-- `distribution.py` — distribution classes (Exponential, Lognormal, TruncatedNormal, etc.).  
+- `distribution.py` — distribution classes (Lognormal, TruncatedNormal, etc.).  
 - `visualisation.py` — plotting helpers using matplotlib.  
 - `summary.py` — lightweight summary object used for storing metrics and DataFrames.  
 - `requirements.txt` — pinned Python dependencies.  
@@ -22,16 +22,19 @@ This README explains how to set up a reproducible environment, run the code, cha
 1. Clone the repo (or pull from GitHub):
 
 `git clone https://github.com/DragonaireM/simulation_project.git`
+
 `cd simulation_project`
 
 2. Create & activate a virtualenv:
 
 `python3 -m venv .venv`
+
 `source .venv/bin/activate`
 
 3. Install dependencies (from `requirements.txt`):
 
 `python -m pip install --upgrade pip`
+
 `pip install -r requirements.txt`
 
 4. Run the example entrypoint:
@@ -46,21 +49,17 @@ This README explains how to set up a reproducible environment, run the code, cha
 1. Clone the repo:
 
 `git clone https://github.com/DragonaireM/simulation_project.git`
+
 `cd simulation project`
 
 2. Create and activate a virtualenv:
-<!-- Recommended (uses the Windows Python launcher) -->
-`py -3 -m venv .venv`
-<!-- or if you call Python as `python` -->
+`py -3 -m venv .venv` or 
 `python -m venv .venv`
 
 3. Activate the venv (pick one):
-- PowerShell (preferred)
-<!-- if PowerShell blocks scripts, enable for current user once: -->
-`Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force`
-
-<!-- activate -->
-`.venv\Scripts\Activate.ps1`
+- PowerShell (preferred):
+    - `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force`
+    - `.venv\Scripts\Activate.ps1`
 
 - Command prompt (cmd.exe):
 `.venv\Scripts\activate.bat`
