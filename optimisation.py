@@ -118,10 +118,12 @@ class Optimisation:
 
         return optimal_simulation
 
-    def optimise_2d(self, fixed_var: str, var_to_opt: str, fixed_var_range: tuple[int, int]) -> None:
+    def _optimise_2d(self, fixed_var: str, var_to_opt: str, fixed_var_range: tuple[int, int]) -> None:
         """
         Perform a 2D optimisation by fixing one variable and optimising another
         across a specified range.
+
+        DISCONTINUED.
         """
         # Make sure variables are valid
         if fixed_var not in ["scheduled_arrival", "mean_service_time", "working_hours"]:

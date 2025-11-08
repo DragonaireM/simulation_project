@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from typing import Any, Optional
-from simulation import Simulation
+from optimisation import Optimisation
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 import os
@@ -12,7 +12,7 @@ class ClinicVisualization:
     Initialize with raw data, then call individual plot methods.
     """
 
-    def __init__(self, simulation: list[Simulation], config: Optional[dict[str, Any]] = None):
+    def __init__(self, model: Optimisation, variable: str, config: Optional[dict[str, Any]] = None):
         """
         Initialize with simulation results.
         
@@ -20,8 +20,10 @@ class ClinicVisualization:
         - simulation_data: Simulation object containing all simulation results
         - config: Optional configuration for plot styling
         """
-        self.data = simulation
+        self.model = model
+        self.data = self.model.simulations[variable]
         self.config = config or self._default_config()
+        self.opt_sim = self.model.optimal_solution(variable=variable)
         
         # Set style
         plt.style.use('seaborn-v0_8')
@@ -122,7 +124,7 @@ class ClinicVisualization:
         if ax is None:
             _fig, ax = plt.subplots(figsize=self.config['figsize'])
 
-        waiting_times: list[float] = self.data[0].summaries.waiting_times.arr
+        waiting_times: list[float] = self.opt_sim.summaries.waiting_times.arr
 
         _n, bins, _patches = ax.hist(waiting_times, bins=bins, alpha=0.7, color=self.colors[0], edgecolor='black', density=True)
         
@@ -157,17 +159,16 @@ class ClinicVisualization:
         if ax is None:
             _fig, ax = plt.subplots(figsize=self.config['figsize'])
 
-        sim = self.data[0]
+        sim = self.opt_sim
         scheduled_arrival = sim.scheduled_arrival
 
         # Get costs for this inter-arrival time
         costs = [
             float(sim.summaries["averages"]["avg_patient_waiting_time"] * sim.number_of_patients * sim.cost_params[1]),
             float(sim.summaries["averages"]["avg_server_idle_time"] * sim.cost_params[0]),
-            float(sim.summaries["averages"]["avg_server_overtime"] * sim.cost_params[2]),
-            float(sim.doctors * sim.working_hours * 60.0 * sim.cost_params[3])
+            float(sim.summaries["averages"]["avg_server_overtime"] * sim.cost_params[2])
         ]
-        labels = ['Waiting', 'Idle', 'Overtime', 'Labor']
+        labels = ['Waiting', 'Idle', 'Overtime']
 
         pie_result = ax.pie(costs, labels=labels, autopct='%1.1f%%', colors=self.colors[:4], startangle=140)
         # ax.pie may return (wedges, texts) or (wedges, texts, autotexts) depending on autopct;
@@ -198,7 +199,6 @@ class ClinicVisualization:
         waiting_costs = [data.summaries['averages']['avg_patient_waiting_time'] * data.number_of_patients * data.cost_params[1] for data in self.data]
         idle_costs = [data.summaries['averages']['avg_server_idle_time'] * data.cost_params[0] for data in self.data]
         overtime_costs = [data.summaries['averages']['avg_server_overtime'] * data.cost_params[2] for data in self.data]
-        labor_costs = [data.doctors * data.working_hours * 60.0 * data.cost_params[3] for data in self.data]
 
         bar_width = 0.8
         x_pos = np.arange(len(scheduled_arrivals))
@@ -207,8 +207,6 @@ class ClinicVisualization:
         ax.bar(x_pos, idle_costs, bar_width, bottom=waiting_costs, label='Idle Cost', color=self.colors[1])
         ax.bar(x_pos, overtime_costs, bar_width, bottom=np.array(waiting_costs) + np.array(idle_costs), 
                label='Overtime Cost', color=self.colors[2])
-        ax.bar(x_pos, labor_costs, bar_width, bottom=np.array(waiting_costs) + np.array(idle_costs) + np.array(overtime_costs), 
-               label='Labor Cost', color=self.colors[3])
         ax.set_xlabel('Scheduled Arrival Time (minutes)')
         ax.set_ylabel('Total Cost ($)')
         ax.set_title('Cost Component Comparison')
@@ -233,7 +231,7 @@ class ClinicVisualization:
         if ax is None:
             _fig, ax = plt.subplots(figsize=self.config['figsize'])
 
-        schedule = self.data[0].schedules[schedule_index]  # Get specific schedule
+        schedule = self.opt_sim.schedules[schedule_index]  # Get specific schedule
         markov_chain = schedule.to_markov_chain()
         time_points = [sum(markov_chain.staying_times[:i+1]) for i in range(len(markov_chain.staying_times))]
         queue_lengths = markov_chain.states
@@ -257,7 +255,7 @@ class ClinicVisualization:
         if ax is None:
             _fig, ax = plt.subplots(figsize=self.config['figsize'])
 
-        schedule = self.data[0].schedules[schedule_index]  # Get specific schedule
+        schedule = self.opt_sim.schedules[schedule_index]  # Get specific schedule
 
         for i in range(len(schedule.arrival_times)):
             ax.broken_barh(
