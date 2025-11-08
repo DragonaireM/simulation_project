@@ -682,47 +682,76 @@ class Simulation:
             control_vars['avg_unpunctuality'].append(avg_unpunctuality)
             control_vars['total_service'].append(total_service)
 
-        # Calculate optimal coefficients across all runs
-        print("Calculating optimal control variate coefficients...")
+        # TWO-STAGE APPROACH FOR ALL METRICS
+        # Stage 1: Use pilot runs to estimate coefficients (first 20% of runs)
+        # Stage 2: Apply coefficients to remaining runs (last 80% of runs)
+        # This eliminates data snooping bias by using independent data for estimation and application
+        pilot_size = max(int(num_runs * 0.2), 100)  # At least 100 pilot runs
+        print(f"\nUsing two-stage approach for all control variates:")
+        print(f"  Pilot runs: {pilot_size} (for estimating coefficients)")
+        print(f"  Main runs:  {num_runs - pilot_size} (for applying coefficients)")
 
-        # Waiting time coefficient
-        cov_waiting_service = np.cov(standard_results['waiting'], control_vars['mean_service'])[0, 1]
-        var_service = np.var(control_vars['mean_service'], ddof=1)
+        # Calculate optimal coefficients from PILOT runs only
+        print("\nCalculating optimal control variate coefficients from pilot runs...")
+
+        # Waiting time coefficient (TWO-STAGE: use only pilot runs)
+        pilot_waiting = standard_results['waiting'][:pilot_size]
+        pilot_service = control_vars['mean_service'][:pilot_size]
+        cov_waiting_service = np.cov(pilot_waiting, pilot_service)[0, 1]
+        var_service = np.var(pilot_service, ddof=1)
         c_waiting = -cov_waiting_service / var_service if var_service > 0 else 0
+        pilot_mean_service = np.mean(pilot_service)
 
-        # Idle time coefficient
-        cov_idle_unpunc = np.cov(standard_results['idle'], control_vars['avg_unpunctuality'])[0, 1]
-        var_unpunc = np.var(control_vars['avg_unpunctuality'], ddof=1)
+        # Idle time coefficient (TWO-STAGE: use only pilot runs)
+        pilot_idle = standard_results['idle'][:pilot_size]
+        pilot_unpunc = control_vars['avg_unpunctuality'][:pilot_size]
+        cov_idle_unpunc = np.cov(pilot_idle, pilot_unpunc)[0, 1]
+        var_unpunc = np.var(pilot_unpunc, ddof=1)
         c_idle = -cov_idle_unpunc / var_unpunc if var_unpunc > 0 else 0
+        pilot_mean_unpunc = np.mean(pilot_unpunc)
 
-        # Overtime coefficient
-        cov_overtime_total = np.cov(standard_results['overtime'], control_vars['total_service'])[0, 1]
-        var_total = np.var(control_vars['total_service'], ddof=1)
+        # Overtime coefficient (TWO-STAGE: use only pilot runs)
+        pilot_overtime = standard_results['overtime'][:pilot_size]
+        pilot_total_service = control_vars['total_service'][:pilot_size]
+        cov_overtime_total = np.cov(pilot_overtime, pilot_total_service)[0, 1]
+        var_total = np.var(pilot_total_service, ddof=1)
         c_overtime = -cov_overtime_total / var_total if var_total > 0 else 0
+        pilot_mean_total_service = np.mean(pilot_total_service)
 
-        print(f"  Optimal coefficients:")
+        print(f"  Optimal coefficients (from pilot runs):")
         print(f"    Waiting time (c*): {c_waiting:.6f}")
         print(f"    Idle time (c*):    {c_idle:.6f}")
         print(f"    Overtime (c*):     {c_overtime:.6f}")
 
         # Apply control variates with optimal coefficients
+        # TWO-STAGE: Pilot runs are NOT adjusted (used for coefficient estimation)
+        #            Main runs ARE adjusted (using coefficients from pilot runs)
         for i in range(num_runs):
-            # 1. Waiting time control
-            cv_mean_waiting = standard_results['waiting'][i] + c_waiting * (
-                control_vars['mean_service'][i] - theoretical_mean_service
-            )
+            # 1. Waiting time control (TWO-STAGE)
+            if i < pilot_size:
+                cv_mean_waiting = standard_results['waiting'][i]
+            else:
+                cv_mean_waiting = standard_results['waiting'][i] + c_waiting * (
+                    control_vars['mean_service'][i] - pilot_mean_service
+                )
             cv_results['waiting'].append(cv_mean_waiting)
 
-            # 2. Idle time control
-            cv_idle = standard_results['idle'][i] + c_idle * (
-                control_vars['avg_unpunctuality'][i] - theoretical_mean_unpunctuality
-            )
+            # 2. Idle time control (TWO-STAGE)
+            if i < pilot_size:
+                cv_idle = standard_results['idle'][i]
+            else:
+                cv_idle = standard_results['idle'][i] + c_idle * (
+                    control_vars['avg_unpunctuality'][i] - pilot_mean_unpunc
+                )
             cv_results['idle'].append(cv_idle)
 
-            # 3. Overtime control
-            cv_overtime = standard_results['overtime'][i] + c_overtime * (
-                control_vars['total_service'][i] - theoretical_mean_total_service
-            )
+            # 3. Overtime control (TWO-STAGE)
+            if i < pilot_size:
+                cv_overtime = standard_results['overtime'][i]
+            else:
+                cv_overtime = standard_results['overtime'][i] + c_overtime * (
+                    control_vars['total_service'][i] - pilot_mean_total_service
+                )
             cv_results['overtime'].append(cv_overtime)
 
             # Calculate CV cost
@@ -735,12 +764,30 @@ class Simulation:
             cv_results['cost'].append(cv_cost)
 
         # Calculate statistics
+        # For all metrics using two-stage approach, only use MAIN runs (pilot runs don't have CV applied)
         comparison = {
             'num_runs': num_runs,
-            'waiting': self._calculate_metric_comparison(standard_results['waiting'], cv_results['waiting'], num_runs),
-            'idle': self._calculate_metric_comparison(standard_results['idle'], cv_results['idle'], num_runs),
-            'overtime': self._calculate_metric_comparison(standard_results['overtime'], cv_results['overtime'], num_runs),
-            'cost': self._calculate_metric_comparison(standard_results['cost'], cv_results['cost'], num_runs)
+            'pilot_size': pilot_size,
+            'waiting': self._calculate_metric_comparison(
+                standard_results['waiting'][pilot_size:],
+                cv_results['waiting'][pilot_size:],
+                num_runs - pilot_size
+            ),
+            'idle': self._calculate_metric_comparison(
+                standard_results['idle'][pilot_size:],
+                cv_results['idle'][pilot_size:],
+                num_runs - pilot_size
+            ),
+            'overtime': self._calculate_metric_comparison(
+                standard_results['overtime'][pilot_size:],
+                cv_results['overtime'][pilot_size:],
+                num_runs - pilot_size
+            ),
+            'cost': self._calculate_metric_comparison(
+                standard_results['cost'][pilot_size:],
+                cv_results['cost'][pilot_size:],
+                num_runs - pilot_size
+            )
         }
 
         # Store for summary display
@@ -788,15 +835,18 @@ class Simulation:
         print(f"{'='*80}")
 
         metrics = [
-            ('Waiting Time (minutes)', 'waiting'),
-            ('Idle Time (minutes)', 'idle'),
-            ('Overtime (minutes)', 'overtime'),
-            ('Total Cost ($)', 'cost')
+            ('Waiting Time (minutes)', 'waiting', True),
+            ('Idle Time (minutes)', 'idle', True),
+            ('Overtime (minutes)', 'overtime', True),
+            ('Total Cost ($)', 'cost', True)
         ]
 
-        for metric_name, key in metrics:
+        for metric_name, key, is_two_stage in metrics:
             data = comparison[key]
             print(f"\n{metric_name}:")
+            if is_two_stage:
+                pilot_size = comparison.get('pilot_size', 0)
+                print(f"  [Two-stage approach: {pilot_size} pilot runs + {comparison['num_runs'] - pilot_size} main runs]")
             print(f"  Standard MC:")
             print(f"    Mean:            {data['standard']['mean']:>12.4f}")
             print(f"    Variance:        {data['standard']['variance']:>12.4f}")
