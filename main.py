@@ -18,9 +18,8 @@ if __name__ == "__main__":
     #       Inclusive of start and end values
     RANGE = (-3, 3)
 
-    # Cost parameters: (idle_cost/min, waiting_cost/min/patient, overtime_cost/min, labor_cost/min/doctor)
-    # Labor cost parameter currently not used, hence set to 0.0
-    COST_PARAMS = (1.0, 0.2, 1.5, 0.0)  # idle, waiting, overtime, labor costs
+    # Cost parameters: (idle_cost/min, waiting_cost/min/patient, overtime_cost/min)
+    COST_PARAMS = (1.0, 0.2, 1.5)  # idle, waiting, overtime costs
 
     # TO OPTIMIZE FOR: (SELECT ONE OUT OF THREE)
     # "scheduled_arrival"

@@ -6,7 +6,7 @@ from tqdm import tqdm
 import pandas as pd
 
 class Optimisation:
-    def __init__(self, range: tuple[int, int]=(-5, 5), working_hours: float=8.0, mean_service_time: float=15.5, number_of_doctors: int=1, number_of_runs: int=10000, scheduled_arrival: float=15.0, cost_params: tuple[float, float, float, float]=(1.0, 0.2, 1.5, 0.0), seed: int | None = None) -> None:
+    def __init__(self, range: tuple[int, int]=(-5, 5), working_hours: float=8.0, mean_service_time: float=15.5, number_of_doctors: int=1, number_of_runs: int=10000, scheduled_arrival: float=15.0, cost_params: tuple[float, float, float]=(1.0, 0.2, 1.5), seed: int | None = None) -> None:
         self.working_hours = working_hours  # hours
         self.mean_service_time = mean_service_time   # minutes
         self.number_of_doctors = number_of_doctors
@@ -345,7 +345,7 @@ class Optimisation:
             # Perform sensitivity analysis for cost_params
             # The only metrics that change are the cost-related ones
             analysis_results: list[dict[str, Any]] = []
-            base_cost_params = list(optimal_solution.cost_params[:3])  # omit last param (labor cost)
+            base_cost_params = list(optimal_solution.cost_params)
             multipliers = [0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0]
 
             # Extract base averages
@@ -359,14 +359,13 @@ class Optimisation:
                 for mult in multipliers:
                     new_cost_params = [param for param in base_cost_params]
                     new_cost_params[i] = base_cost_params[i] * mult
-                    new_cost_params_tuple = (new_cost_params[0], new_cost_params[1], new_cost_params[2], optimal_solution.cost_params[3])
+                    new_cost_params_tuple = (new_cost_params[0], new_cost_params[1], new_cost_params[2])
 
                     # Calculate new total cost based on unchanged averages
                     total_cost = (
                         new_cost_params_tuple[0] * avg_idle_time,
                         new_cost_params_tuple[1] * avg_waiting_time,
-                        new_cost_params_tuple[2] * avg_overtime,
-                        new_cost_params_tuple[3] * self.number_of_doctors * self.working_hours * 60.0
+                        new_cost_params_tuple[2] * avg_overtime
                     )
 
                     analysis_results.append({
@@ -374,7 +373,7 @@ class Optimisation:
                         "variable": ["Idle Cost", "Waiting Cost", "Overtime Cost"][i],
                         "multiplier": mult,
                         "variable_cost": total_cost[i],
-                        "total_cost": total_cost[0] + total_cost[1] + total_cost[2] + total_cost[3],
+                        "total_cost": total_cost[0] + total_cost[1] + total_cost[2]
                     })
 
             return analysis_results

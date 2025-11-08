@@ -19,7 +19,7 @@ class Simulation:
                  service_distr: Exponential | Lognormal,
                  doctors: int=1,
                  queue_capacity: float=float('inf'),
-                 cost_params: tuple[float, float, float, float]=(1.0, 0.2, 1.5, 0.0),
+                 cost_params: tuple[float, float, float]=(1.0, 0.2, 1.5),
                  seed: int | None=None
                  ):
         self.working_hours = working_hours
@@ -114,8 +114,7 @@ class Simulation:
 
         self.cost = float(np.mean(idle_times) * self.cost_params[0] +
                                 np.mean(waiting_times) * self.number_of_patients * self.cost_params[1] +
-                                np.mean(overtime_times) * self.cost_params[2] +
-                                self.doctors * self.working_hours * 60.0 * self.cost_params[3])
+                                np.mean(overtime_times) * self.cost_params[2])
 
         average_costs.add_stats(Statistic("Avg Server Idle Time", np.mean(idle_times)))
         average_costs.add_stats(Statistic("Avg Patient Waiting Time", np.mean(waiting_times)))
