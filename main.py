@@ -23,7 +23,7 @@ if __name__ == "__main__":
     # "scheduled_arrival"
     # "mean_service_time"
     # "cost_params"
-    VARIABLE = "scheduled_arrival"  # Variable to optimize for
+    VARIABLE = "cost_params"  # Variable to optimize for
     SENSITIVITY_ANALYSIS = True  # Set to True to perform sensitivity analysis around optimal value
 
     # SAVE TO DATABASE --- OPTIONAL ---
@@ -72,43 +72,44 @@ if __name__ == "__main__":
         )
         model.sensitivity_summary(analysis_results, variable=VARIABLE)
 
-    # Initialize visualizations
-    viz1 = ClinicVisualization(model, VARIABLE)
+    if VARIABLE != "cost_params":
+        # Initialize visualizations
+        viz1 = ClinicVisualization(model, VARIABLE)
 
-    # List of plots to choose from
+        # List of plots to choose from
 
-    # 1. Cost against variable value 
-    viz1.plot_cost_against_variable(variable=VARIABLE)
-    #    VARIABLE and RANGE affect this plot
-    #    RANGE should have a distance of at least 2 to make a meaningful comparison
+        # 1. Cost against variable value 
+        viz1.plot_cost_against_variable(variable=VARIABLE)
+        #    VARIABLE and RANGE affect this plot
+        #    RANGE should have a distance of at least 2 to make a meaningful comparison
 
-    # 2. Queue evolution 
-    viz1.plot_queue_evolution(schedule_index=0)
-    #    Choose any schedule_index from 0 to NUMBER_OF_RUNS-1
-    #    RANGE doesn't affect this plot
+        # 2. Queue evolution 
+        viz1.plot_queue_evolution(schedule_index=0)
+        #    Choose any schedule_index from 0 to NUMBER_OF_RUNS-1
+        #    RANGE doesn't affect this plot
 
-    # 3. Schedule Gantt chart 
-    viz1.plot_schedule_gantt(schedule_index=0)
-    #    Choose any schedule_index from 0 to NUMBER_OF_RUNS-1
-    #    RANGE doesn't affect this plot
+        # 3. Schedule Gantt chart 
+        viz1.plot_schedule_gantt(schedule_index=0)
+        #    Choose any schedule_index from 0 to NUMBER_OF_RUNS-1
+        #    RANGE doesn't affect this plot
 
-    # 4. Cost comparison stacked bar chart
-    viz1.plot_cost_comparison()
-    #    RANGE should have a distance of at least 2 to make a meaningful comparison
+        # 4. Cost comparison stacked bar chart
+        viz1.plot_cost_comparison()
+        #    RANGE should have a distance of at least 2 to make a meaningful comparison
 
-    # 5. Cost breakdown pie chart
-    viz1.plot_cost_breakdown()
-    #    RANGE doesn't affect this plot
+        # 5. Cost breakdown pie chart
+        viz1.plot_cost_breakdown()
+        #    RANGE doesn't affect this plot
 
-    # 6. Waiting time histogram
-    viz1.plot_waiting_time_distribution()
-    #    RANGE doesn't affect this plot
+        # 6. Waiting time histogram
+        viz1.plot_waiting_time_distribution()
+        #    RANGE doesn't affect this plot
 
-    # 7. Waiting time vs Utilization trade-off
-    viz1.plot_tradeoff_analysis()
-    #    RANGE should have a distance of at least 2 to make a meaningful comparison
+        # 7. Waiting time vs Utilization trade-off
+        viz1.plot_tradeoff_analysis()
+        #    RANGE should have a distance of at least 2 to make a meaningful comparison
 
-    # plt.show() # Uncomment to display plots interactively
+        # plt.show() # Uncomment to display plots interactively
 
-    if SAVE_TO_PNG:
-        viz1.save_plots(f"out/seed{SEED}/simulation_plot/{VARIABLE}/img")
+        if SAVE_TO_PNG:
+            viz1.save_plots(f"out/seed{SEED}/simulation_plot/{VARIABLE}/img")
