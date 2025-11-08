@@ -32,7 +32,7 @@ class Simulation:
         self.schedules: list[Schedule] = []
         self.cost_params = cost_params  # idle, waiting, overtime, labor costs
         self.seed = seed
-        self.control_variate_info = {}  # Store control variate information if used
+        self.control_variate_info: dict[str, Any] = {}  # Store control variate information if used
         self.setup()
 
     def setup(self) -> None:
@@ -226,8 +226,7 @@ class Simulation:
 
         total_cost = float(np.mean(idle_times) * self.cost_params[0] +
                             np.mean(waiting_times) * self.number_of_patients * self.cost_params[1] +
-                            np.mean(overtime_times) * self.cost_params[2] +
-                            self.doctors * self.working_hours * 60.0 * self.cost_params[3])
+                            np.mean(overtime_times) * self.cost_params[2])
         return total_cost
 
     def write_summaries_to_sqlite(self, filepath: str) -> None:
@@ -558,7 +557,7 @@ class Simulation:
         )
 
         # Store control variate info for summary display
-        self.control_variate_info: dict[str, float] = {
+        self.control_variate_info = {
             'variance_reduction_percent': comparison['variance_reduction_percent'],
             'efficiency_gain': comparison['efficiency_gain'],
             'avg_correlation': float(vr_info['correlation_ws'].mean()),
@@ -623,15 +622,15 @@ class Simulation:
         theoretical_mean_total_service = self.number_of_patients * self.mean_service_time
 
         # Storage for results
-        standard_results = {
+        standard_results: dict[str, list[Any]] = {
             'waiting': [], 'idle': [], 'overtime': [], 'cost': []
         }
-        cv_results = {
+        cv_results: dict[str, list[Any]] = {
             'waiting': [], 'idle': [], 'overtime': [], 'cost': []
         }
 
         # Store control variables for coefficient calculation
-        control_vars = {
+        control_vars: dict[str, list[Any]] = {
             'mean_service': [],
             'avg_unpunctuality': [],
             'total_service': []
@@ -658,24 +657,23 @@ class Simulation:
             overtime = markov_chain.get_server_overtime(self.working_hours)
 
             # Standard metrics (without control variates)
-            mean_waiting = np.mean(waiting_times)
+            mean_waiting = float(np.mean(waiting_times))
             standard_results['waiting'].append(mean_waiting)
             standard_results['idle'].append(idle_time)
             standard_results['overtime'].append(overtime)
 
             # Calculate standard cost
-            standard_cost = (
+            standard_cost: float = (
                 idle_time * self.cost_params[0] +
                 mean_waiting * self.number_of_patients * self.cost_params[1] +
-                overtime * self.cost_params[2] +
-                self.doctors * self.working_hours * 60.0 * self.cost_params[3]
+                overtime * self.cost_params[2]
             )
             standard_results['cost'].append(standard_cost)
 
             # Store control variables
-            mean_service = np.mean(service_times)
-            avg_unpunctuality = np.mean(interarrival_deviation)
-            total_service = np.sum(service_times)
+            mean_service = float(np.mean(service_times))
+            avg_unpunctuality = float(np.mean(interarrival_deviation))
+            total_service = float(np.sum(service_times))
 
             control_vars['mean_service'].append(mean_service)
             control_vars['avg_unpunctuality'].append(avg_unpunctuality)
@@ -757,14 +755,13 @@ class Simulation:
             cv_cost = (
                 cv_idle * self.cost_params[0] +
                 cv_mean_waiting * self.number_of_patients * self.cost_params[1] +
-                cv_overtime * self.cost_params[2] +
-                self.doctors * self.working_hours * 60.0 * self.cost_params[3]
+                cv_overtime * self.cost_params[2]
             )
             cv_results['cost'].append(cv_cost)
 
         # Calculate statistics
         # For all metrics using two-stage approach, only use MAIN runs (pilot runs don't have CV applied)
-        comparison = {
+        comparison: dict[str, Any] = {
             'num_runs': num_runs,
             'pilot_size': pilot_size,
             'waiting': self._calculate_metric_comparison(
