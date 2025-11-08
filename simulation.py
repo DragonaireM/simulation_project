@@ -45,7 +45,7 @@ class Simulation:
         interarrival_deviation = self.iat_distribution.sample(size=self.number_of_patients, seed=seed)
         arrival_times = [i * self.scheduled_arrival + dev for i, dev in enumerate(interarrival_deviation)]
 
-        schedule = Schedule(self.working_hours)
+        schedule = Schedule(self.working_hours, self.scheduled_arrival)
         schedule.setup_schedule(
             arrival_times,
             service_times,
@@ -243,20 +243,20 @@ class Simulation:
         conn = sqlite3.connect(filename)
         try:
             # write averages / metrics as two-column tables (key, value)
-            summaries.averages.to_dataframe().to_sql(
+            summaries.averages.to_dataframe().round(6).to_sql(
                 "averages", conn, index=False, if_exists="replace"
             )
-            summaries.patient_metrics.to_dataframe().to_sql(
+            summaries.patient_metrics.to_dataframe().round(6).to_sql(
                 "patient_metrics", conn, index=False, if_exists="replace"
             )
             # system_metrics is already a DataFrame; write it directly instead of trying to build a Series from a DataFrame
-            summaries.system_metrics.to_dataframe().to_sql(
+            summaries.system_metrics.to_dataframe().round(6).to_sql(
                 "system_metrics", conn, index=False, if_exists="replace"
             )
             # write each schedule as its own table
-            for i, df in enumerate(summaries.schedules.arr, start=1):
+            for i, df in tqdm(enumerate(summaries.schedules.arr, start=1)):
                 tbl = f"schedule_run_{i}"
-                df.to_sql(tbl, conn, index=False, if_exists="replace")
+                df.round(6).to_sql(tbl, conn, index=False, if_exists="replace")
         finally:
             conn.close()
             print(f"{filename} written successfully.")
@@ -335,7 +335,7 @@ class Simulation:
         interarrival_deviation = self.iat_distribution.sample(size=self.number_of_patients, seed=seed)
         arrival_times = [i * self.scheduled_arrival + dev for i, dev in enumerate(interarrival_deviation)]
 
-        schedule = Schedule(self.working_hours)
+        schedule = Schedule(self.working_hours, self.scheduled_arrival)
         schedule.setup_schedule(
             arrival_times,
             service_times,
@@ -645,7 +645,7 @@ class Simulation:
             interarrival_deviation = self.iat_distribution.sample(size=self.number_of_patients, seed=seed)
             arrival_times = [i * self.scheduled_arrival + dev for i, dev in enumerate(interarrival_deviation)]
 
-            schedule = Schedule(self.working_hours)
+            schedule = Schedule(self.working_hours, self.scheduled_arrival)
             schedule.setup_schedule(arrival_times, service_times, servers=self.doctors, queue_capacity=self.queue_capacity)
 
             df = schedule.to_dataframe()

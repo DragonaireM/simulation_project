@@ -24,8 +24,9 @@ class Schedule:
     Represents the schedule of a clinic's queueing system.
     """
 
-    def __init__(self, working_hours: float=10.0):
+    def __init__(self, working_hours: float=10.0, scheduled_arrival: float=16.0):
         self.working_hours = working_hours  # hours
+        self.scheduled_arrival = scheduled_arrival  # minutes
         self.arrival_times: list[float] = []
         self.service_start_times: list[float] = []
         self.service_end_times: list[float] = []
@@ -51,6 +52,8 @@ class Schedule:
         # save the variables (for potential future use)
         # Ensure all arrival_times are positive
         self.arrival_times = [max(0.0, t) for t in arrival_times]
+        # Sort arrival times to ensure non-decreasing order
+        self.arrival_times.sort()
         self.service_times = service_times
         self.servers = servers
         self.queue_capacity = queue_capacity
@@ -165,6 +168,7 @@ class Schedule:
             "start": self.service_start_times,
             "end": self.service_end_times,
             "service_time": [end - start for start, end in zip(self.service_start_times, self.service_end_times)],
-            "waiting_time": [start - arrival for arrival, start in zip(self.arrival_times, self.service_start_times)]
+            # "waiting_time": [start - arrival for arrival, start in zip(self.arrival_times, self.service_start_times)]
+            "waiting_time": [max(0.0, start - i * self.scheduled_arrival) for i, start in enumerate(self.service_start_times)]
         }
         return pd.DataFrame(data)
