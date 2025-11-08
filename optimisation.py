@@ -280,8 +280,9 @@ class Optimisation:
                 print(f"  Percentage waiting > 15 min:  {s['patient_metrics']['percentage_waiting_over_15min']:>12.2f}%")
 
                 # Run comprehensive control variate comparison (this will take some time)
-                print(f"\n  Running comprehensive control variate comparison with 2000 runs...")
-                sim.comprehensive_control_variate_comparison(num_runs=2000, base_seed=sim.seed)
+                # Using same number of runs and seeds as optimization for perfect consistency
+                print(f"\n  Running comprehensive control variate comparison with {self.number_of_runs} runs...")
+                sim.comprehensive_control_variate_comparison(num_runs=self.number_of_runs, base_seed=sim.seed)
 
         print("\n" + "="*80)
         print("END OF SUMMARY")
