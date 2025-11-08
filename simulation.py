@@ -1,4 +1,4 @@
-from distribution import Exponential, Lognormal, TruncatedNormal
+from distribution import Lognormal, TruncatedNormal
 from schedule import Schedule
 import pandas as pd
 from typing import Any
@@ -16,7 +16,7 @@ class Simulation:
                  scheduled_arrival: float,
                  mean_service_time: float,
                  iat_distr: TruncatedNormal,
-                 service_distr: Exponential | Lognormal,
+                 service_distr: Lognormal,
                  doctors: int=1,
                  queue_capacity: float=float('inf'),
                  cost_params: tuple[float, float, float]=(1.0, 0.2, 1.5),
