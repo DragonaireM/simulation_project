@@ -1,39 +1,5 @@
 import math
 import numpy as np
-
-class Exponential:
-    """
-    Represents an exponential distribution with a given rate parameter.
-    """
-    def __init__(self, rate: float=1.0):
-        if rate <= 0:
-            raise ValueError("Rate must be positive.")
-        self.rate = rate
-
-    def pdf(self, x: float) -> float:
-        if x < 0:
-            return 0
-        return self.rate * (2.718281828459045 ** (-self.rate * x))
-
-    def cdf(self, x: float) -> float:
-        if x < 0:
-            return 0
-        return 1 - (2.718281828459045 ** (-self.rate * x))
-
-    def mean(self) -> float:
-        return 1 / self.rate
-
-    def variance(self) -> float:
-        return 1 / (self.rate ** 2)
-    
-    def sample(self, size: int=1, seed: int | None=None) -> np.ndarray:
-        rng = np.random.default_rng(seed)
-        return rng.exponential(scale=1.0 / self.rate, size=size)
-    
-    def __eq__(self, other: object) -> bool:
-        if not isinstance(other, Exponential):
-            return NotImplemented
-        return self.rate == other.rate
     
 class Lognormal:
     """
