@@ -62,7 +62,9 @@ This tool helps clinic managers find optimal scheduling parameters through simul
    ```bash
    python main.py
    ```
+4. Alternatively, you can view the sample results (fixed seed) in cv_results.md. 
 
+5. Note, if you run python main.py, after the SIMULATION SUMMARY-SAVED RESULTS are printed, you'll be prompted by system to save the generated samples to database (.db files). Choose 'all' to save all the samples, or choose 'none' if you don't wish to save them. 
 ---
 
 
