@@ -30,7 +30,7 @@ class Simulation:
         self.iat_distribution = iat_distr
         self.service_distribution = service_distr
         self.schedules: list[Schedule] = []
-        self.cost_params = cost_params  # idle, waiting, overtime, labor costs
+        self.cost_params = cost_params  # idle, waiting, overtime
         self.seed = seed
         self.control_variate_info: dict[str, Any] = {}  # Store control variate information if used
         self.setup()
@@ -242,14 +242,12 @@ class Simulation:
             os.makedirs(dirpath, exist_ok=True)
         conn = sqlite3.connect(filename)
         try:
-            # write averages / metrics as two-column tables (key, value)
             summaries.averages.to_dataframe().round(6).to_sql(
                 "averages", conn, index=False, if_exists="replace"
             )
             summaries.patient_metrics.to_dataframe().round(6).to_sql(
                 "patient_metrics", conn, index=False, if_exists="replace"
             )
-            # system_metrics is already a DataFrame; write it directly instead of trying to build a Series from a DataFrame
             summaries.system_metrics.to_dataframe().round(6).to_sql(
                 "system_metrics", conn, index=False, if_exists="replace"
             )

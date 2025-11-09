@@ -19,13 +19,11 @@ class Optimisation:
             "scheduled_arrival": [],
             "mean_service_time": [],
             "cost_params": [],
-            "2d": []
         }
         self.summary: dict[str, list[Summary]] = {
             "scheduled_arrival": [],
             "mean_service_time": [],
             "cost_params": [],
-            "2d": []
         }
 
     def optimise_for(self, variable: str) -> None:
@@ -50,8 +48,6 @@ class Optimisation:
                 sim.scheduled_arrival += value
             elif variable == "mean_service_time":
                 sim.mean_service_time += value
-            elif variable == "working_hours":
-                sim.working_hours += value
             elif variable == "cost_params":
                 # Not applicable here
                 pass

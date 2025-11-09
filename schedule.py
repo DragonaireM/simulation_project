@@ -168,7 +168,6 @@ class Schedule:
             "start": self.service_start_times,
             "end": self.service_end_times,
             "service_time": [end - start for start, end in zip(self.service_start_times, self.service_end_times)],
-            # "waiting_time": [start - arrival for arrival, start in zip(self.arrival_times, self.service_start_times)]
             "waiting_time": [max(0.0, start - i * self.scheduled_arrival) for i, start in enumerate(self.service_start_times)]
         }
         return pd.DataFrame(data)
